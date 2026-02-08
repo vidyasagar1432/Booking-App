@@ -336,6 +336,75 @@ def download_buttons(df: pd.DataFrame, label_prefix: str = "Download"):
         )
 
 
+def load_all_bookings() -> pd.DataFrame:
+    """Load all booking sheets into a single DataFrame for dashboard views."""
+    all_frames = []
+    for sheet_name in SHEETS_CONFIG.keys():
+        df = load_sheet(sheet_name)
+        if not df.empty:
+            df["booking_type"] = sheet_name
+            all_frames.append(df)
+
+    if not all_frames:
+        return pd.DataFrame(columns=COMMON_COLUMNS)
+
+    combined = pd.concat(all_frames, ignore_index=True)
+    return combined
+
+
+def render_dashboard():
+    st.subheader("Dashboard overview")
+    combined = load_all_bookings()
+
+    if combined.empty:
+        st.info("No bookings found across all types yet.")
+        return
+
+    total_bookings = len(combined)
+    total_amount = pd.to_numeric(combined.get("total_amount", pd.Series([])), errors="coerce").sum()
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total bookings", int(total_bookings))
+    col2.metric("Total amount", f"{total_amount:,.2f}")
+
+    status_counts = combined.get("status", pd.Series([])).value_counts()
+    top_status = status_counts.index[0] if not status_counts.empty else "N/A"
+    col3.metric("Top status", top_status)
+
+    st.markdown("### Bookings by type")
+    type_counts = combined["booking_type"].value_counts().rename_axis("type").reset_index(name="count")
+    st.bar_chart(type_counts.set_index("type"))
+
+    st.markdown("### Bookings by status")
+    status_counts = combined["status"].fillna("Unknown").value_counts().rename_axis("status").reset_index(name="count")
+    st.bar_chart(status_counts.set_index("status"))
+
+    st.markdown("### Revenue by booking month")
+    booking_dates = pd.to_datetime(combined.get("booking_date"), errors="coerce")
+    revenue_df = combined.copy()
+    revenue_df["booking_month"] = booking_dates.dt.to_period("M").dt.to_timestamp()
+    revenue_df["total_amount_numeric"] = pd.to_numeric(
+        revenue_df.get("total_amount", pd.Series([])),
+        errors="coerce",
+    )
+    revenue_monthly = (
+        revenue_df.groupby("booking_month")["total_amount_numeric"]
+        .sum()
+        .reset_index()
+        .dropna()
+    )
+    if not revenue_monthly.empty:
+        st.line_chart(revenue_monthly.set_index("booking_month"))
+    else:
+        st.info("No booking dates available to chart revenue.")
+
+    st.markdown("### Recent bookings")
+    recent = combined.copy()
+    recent["booking_date_sort"] = pd.to_datetime(recent.get("booking_date"), errors="coerce")
+    recent = recent.sort_values(by="booking_date_sort", ascending=False)
+    st.dataframe(recent.head(10).drop(columns=["booking_date_sort"], errors="ignore"), use_container_width=True)
+
+
 # ==============================
 # Forms: Create / Edit
 # ==============================
@@ -786,7 +855,7 @@ def main():
 
     action = st.sidebar.radio(
         "Action",
-        ["Create", "View", "Edit", "Delete"],
+        ["Dashboard", "Create", "View", "Edit", "Delete"],
     )
 
     st.sidebar.markdown("---")
@@ -798,7 +867,9 @@ def main():
     initialize_excel_file()
 
     # Route to appropriate action
-    if action == "Create":
+    if action == "Dashboard":
+        render_dashboard()
+    elif action == "Create":
         create_booking(booking_type)
     elif action == "View":
         view_bookings(booking_type)
