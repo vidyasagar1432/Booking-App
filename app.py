@@ -81,6 +81,7 @@ SHEETS_CONFIG: Dict[str, Dict[str, list]] = {
 
 STATUS_OPTIONS = ["Confirmed", "On Hold", "Cancelled", "Pending", "Completed"]
 CURRENCY_OPTIONS = ["INR", "USD", "EUR", "GBP", "AED", "Other"]
+DEFAULT_UPCOMING_DAYS = 30
 
 
 # ==============================
@@ -227,21 +228,115 @@ def parse_datetime(value) -> Optional[dt.datetime]:
         return None
 
 
+def normalize_amounts(df: pd.DataFrame) -> pd.Series:
+    return pd.to_numeric(df.get("total_amount", pd.Series([])), errors="coerce")
+
+
+def get_upcoming_trips(df: pd.DataFrame, days: int = DEFAULT_UPCOMING_DAYS) -> pd.DataFrame:
+    if df.empty:
+        return df
+    today = dt.date.today()
+    end_date = today + dt.timedelta(days=days)
+    travel_dates = pd.to_datetime(df.get("travel_start_date"), errors="coerce")
+    mask = (travel_dates.dt.date >= today) & (travel_dates.dt.date <= end_date)
+    return df.loc[mask].copy()
+
+
+def count_missing_values(df: pd.DataFrame, column: str) -> int:
+    if column not in df.columns:
+        return len(df)
+    series = df[column]
+    return int((series.isna() | (series.astype(str).str.strip() == "")).sum())
+
+
+def render_data_quality_report(df: pd.DataFrame, booking_type: str):
+    if df.empty:
+        st.info("No records available for data quality checks.")
+        return
+
+    required_fields = {
+        "Flight": ["client_name", "booking_date", "travel_start_date", "total_amount", "status", "pnr", "from_city", "to_city"],
+        "Hotel": ["client_name", "booking_date", "travel_start_date", "total_amount", "status", "city", "hotel_name"],
+        "Train": ["client_name", "booking_date", "travel_start_date", "total_amount", "status", "pnr", "from_station", "to_station"],
+        "Bus": ["client_name", "booking_date", "travel_start_date", "total_amount", "status", "pnr", "from_city", "to_city"],
+    }
+
+    fields = required_fields.get(booking_type, [])
+    missing_rows = []
+    for field in fields:
+        missing_count = count_missing_values(df, field)
+        missing_pct = (missing_count / len(df)) * 100 if len(df) else 0
+        missing_rows.append(
+            {
+                "field": field,
+                "missing_count": missing_count,
+                "missing_pct": f"{missing_pct:.1f}%",
+            }
+        )
+
+    st.markdown("#### Missing required details")
+    st.dataframe(pd.DataFrame(missing_rows), use_container_width=True)
+
+    if booking_type in ["Flight", "Train", "Bus"] and "pnr" in df.columns:
+        st.markdown("#### Duplicate PNRs")
+        pnr_series = df["pnr"].astype(str)
+        dupes = df[pnr_series.duplicated(keep=False) & (pnr_series.str.strip() != "")]
+        if dupes.empty:
+            st.success("No duplicate PNRs found.")
+        else:
+            st.warning("Duplicate PNRs detected.")
+            st.dataframe(dupes, use_container_width=True)
+
+
+def render_client_vendor_summary(df: pd.DataFrame):
+    if df.empty:
+        st.info("No data available for summaries.")
+        return
+
+    amount_series = normalize_amounts(df)
+    df = df.copy()
+    df["total_amount_numeric"] = amount_series
+
+    st.markdown("#### Top clients by revenue")
+    client_summary = (
+        df.groupby("client_name", dropna=False)["total_amount_numeric"]
+        .agg(["count", "sum"])
+        .rename(columns={"count": "bookings", "sum": "total_amount"})
+        .sort_values("total_amount", ascending=False)
+        .reset_index()
+    )
+    st.dataframe(client_summary.head(10), use_container_width=True)
+
+    st.markdown("#### Top vendors by revenue")
+    vendor_summary = (
+        df.groupby("vendor", dropna=False)["total_amount_numeric"]
+        .agg(["count", "sum"])
+        .rename(columns={"count": "bookings", "sum": "total_amount"})
+        .sort_values("total_amount", ascending=False)
+        .reset_index()
+    )
+    st.dataframe(vendor_summary.head(10), use_container_width=True)
+
+
 def render_summary_metrics(df: pd.DataFrame):
     """Show basic summary metrics for the current booking type."""
     st.subheader("Summary")
 
     total_bookings = len(df)
-    total_amount = pd.to_numeric(df.get("total_amount", pd.Series([])), errors="coerce").sum()
+    total_amount = normalize_amounts(df).sum()
+    avg_amount = normalize_amounts(df).mean() if total_bookings else 0
+    upcoming_count = len(get_upcoming_trips(df))
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total bookings", int(total_bookings))
     col2.metric("Total amount", f"{total_amount:,.2f}")
+    col3.metric("Average booking value", f"{avg_amount:,.2f}")
     # Status counts
     status_counts = df.get("status", pd.Series([])).value_counts()
     top_status = status_counts.index[0] if not status_counts.empty else "N/A"
     top_status_count = int(status_counts.iloc[0]) if not status_counts.empty else 0
-    col3.metric(f"Top status", f"{top_status} ({top_status_count})")
+    col4.metric(f"Top status", f"{top_status} ({top_status_count})")
+    st.caption(f"Upcoming trips in the next {DEFAULT_UPCOMING_DAYS} days: {upcoming_count}")
 
 
 def filtered_dataframe_ui(df: pd.DataFrame, booking_type: str) -> pd.DataFrame:
@@ -361,15 +456,17 @@ def render_dashboard():
         return
 
     total_bookings = len(combined)
-    total_amount = pd.to_numeric(combined.get("total_amount", pd.Series([])), errors="coerce").sum()
+    total_amount = normalize_amounts(combined).sum()
+    avg_amount = normalize_amounts(combined).mean() if total_bookings else 0
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total bookings", int(total_bookings))
     col2.metric("Total amount", f"{total_amount:,.2f}")
+    col3.metric("Average booking value", f"{avg_amount:,.2f}")
 
     status_counts = combined.get("status", pd.Series([])).value_counts()
     top_status = status_counts.index[0] if not status_counts.empty else "N/A"
-    col3.metric("Top status", top_status)
+    col4.metric("Top status", top_status)
 
     st.markdown("### Bookings by type")
     type_counts = combined["booking_type"].value_counts().rename_axis("type").reset_index(name="count")
@@ -397,6 +494,30 @@ def render_dashboard():
         st.line_chart(revenue_monthly.set_index("booking_month"))
     else:
         st.info("No booking dates available to chart revenue.")
+
+    st.markdown("### Upcoming travel")
+    upcoming = get_upcoming_trips(combined)
+    if upcoming.empty:
+        st.info(f"No trips in the next {DEFAULT_UPCOMING_DAYS} days.")
+    else:
+        upcoming_sorted = upcoming.copy()
+        upcoming_sorted["travel_start_date"] = pd.to_datetime(
+            upcoming_sorted.get("travel_start_date"), errors="coerce"
+        )
+        upcoming_sorted = upcoming_sorted.sort_values(by="travel_start_date")
+        st.dataframe(
+            upcoming_sorted[
+                [
+                    "booking_type",
+                    "client_name",
+                    "travel_start_date",
+                    "travel_end_date",
+                    "status",
+                    "total_amount",
+                ]
+            ].head(20),
+            use_container_width=True,
+        )
 
     st.markdown("### Recent bookings")
     recent = combined.copy()
@@ -707,10 +828,18 @@ def view_bookings(booking_type: str):
 
     render_summary_metrics(df)
     filtered = filtered_dataframe_ui(df, booking_type)
-    st.write("### Results")
-    st.dataframe(filtered, use_container_width=True)
+    results_tab, summary_tab, quality_tab = st.tabs(["Results", "Client & Vendor Summary", "Data Quality"])
 
-    download_buttons(filtered, label_prefix=f"{booking_type}_bookings")
+    with results_tab:
+        st.write("### Results")
+        st.dataframe(filtered, use_container_width=True)
+        download_buttons(filtered, label_prefix=f"{booking_type}_bookings")
+
+    with summary_tab:
+        render_client_vendor_summary(filtered)
+
+    with quality_tab:
+        render_data_quality_report(filtered, booking_type)
 
 
 def edit_booking(booking_type: str):
