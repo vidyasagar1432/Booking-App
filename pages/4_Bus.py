@@ -128,6 +128,7 @@ with tab2:
         seat_number = st.text_input(
             "Seat Number", key="bus_seat", placeholder="e.g., A12"
         )
+        booking_date = st.date_input("Booking Date *", key="bus_booking_date")
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="bus_cost"
         )
@@ -200,7 +201,7 @@ with tab2:
                     "To City": to_city,
                     "Seat Number": seat_number,
                     "Total Cost": total_cost,
-                    "Booking Date": datetime.now().strftime("%Y-%m-%d"),
+                    "Booking Date": str(booking_date),
                     "Passengers": json.dumps(passengers_list),
                     "Passenger Count": len(passengers_list),
                     "Status": status,
@@ -305,6 +306,13 @@ with tab3:
                 min_value=0.0,
                 step=0.01,
                 key="bus_edit_cost",
+            )
+            booking_date = st.date_input(
+                "Booking Date",
+                value=pd.to_datetime(
+                    booking.get("Booking Date", datetime.now())
+                ).date(),
+                key="bus_edit_booking_date",
             )
 
         status = st.selectbox(

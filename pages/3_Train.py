@@ -132,6 +132,7 @@ with tab2:
             "Seat Number", key="train_seat", placeholder="e.g., 45A"
         )
         train_class = st.selectbox("Class", CLASS_OPTIONS, key="train_class")
+        booking_date = st.date_input("Booking Date *", key="train_booking_date")
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="train_cost"
         )
@@ -328,6 +329,13 @@ with tab3:
                 min_value=0.0,
                 step=0.01,
                 key="train_edit_cost",
+            )
+            booking_date = st.date_input(
+                "Booking Date",
+                value=pd.to_datetime(
+                    booking.get("Booking Date", datetime.now())
+                ).date(),
+                key="train_edit_booking_date",
             )
 
         status = st.selectbox(

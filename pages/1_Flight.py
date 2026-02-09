@@ -135,6 +135,7 @@ with tab2:
             "Seat Number", key="flight_seat", placeholder="e.g., 12A"
         )
         flight_class = st.selectbox("Class", CLASS_OPTIONS, key="flight_class")
+        booking_date = st.date_input("Booking Date *", key="flight_booking_date")
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="flight_cost"
         )
@@ -211,7 +212,7 @@ with tab2:
                     "Total Cost": total_cost,
                     "Passengers": json.dumps(passengers_list),
                     "Passenger Count": len(passengers_list),
-                    "Booking Date": datetime.now().strftime("%Y-%m-%d"),
+                    "Booking Date": str(booking_date),
                     "Status": status,
                     "Notes": notes,
                 }
@@ -328,6 +329,13 @@ with tab3:
                 min_value=0.0,
                 step=0.01,
                 key="flight_edit_cost",
+            )
+            booking_date = st.date_input(
+                "Booking Date",
+                value=pd.to_datetime(
+                    booking.get("Booking Date", datetime.now())
+                ).date(),
+                key="flight_edit_booking_date",
             )
 
         status = st.selectbox(

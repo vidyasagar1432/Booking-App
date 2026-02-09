@@ -139,6 +139,7 @@ with tab2:
         confirmation_number = st.text_input(
             "Confirmation Number", key="hotel_conf_number"
         )
+        booking_date = st.date_input("Booking Date *", key="hotel_booking_date")
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="hotel_cost"
         )
@@ -335,6 +336,13 @@ with tab3:
                 min_value=0.0,
                 step=0.01,
                 key="hotel_edit_cost",
+            )
+            booking_date = st.date_input(
+                "Booking Date",
+                value=pd.to_datetime(
+                    booking.get("Booking Date", datetime.now())
+                ).date(),
+                key="hotel_edit_booking_date",
             )
 
         status = st.selectbox(
