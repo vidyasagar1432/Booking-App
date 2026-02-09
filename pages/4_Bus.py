@@ -203,7 +203,7 @@ with tab2:
                     "Total Cost": total_cost,
                     "Booking Date": str(booking_date),
                     "Passengers": json.dumps(passengers_list),
-                    "Passenger Count": len(passengers_list),
+                    "Passenger Count": 1 + len(passengers_list),
                     "Status": status,
                     "Notes": notes,
                 }
@@ -364,7 +364,7 @@ with tab3:
                 parsed = []
 
             data["Passengers"] = json.dumps(parsed)
-            data["Passenger Count"] = len(parsed)
+            data["Passenger Count"] = 1 + len(parsed)
 
             success, message = db.update_booking("bus", booking_id, data)
             if success:

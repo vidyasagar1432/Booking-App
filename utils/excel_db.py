@@ -124,9 +124,10 @@ class ExcelDatabase:
                 return False, f"Booking ID {booking_id} not found"
 
             # Update the row
+            index = df[mask].index[0]
             for key, value in data.items():
                 if key in df.columns:
-                    df.loc[mask, key] = value
+                    df.at[index, key] = value
 
             # Write back to Excel
             with pd.ExcelWriter(

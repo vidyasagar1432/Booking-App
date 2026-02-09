@@ -211,7 +211,7 @@ with tab2:
                     "Class": flight_class,
                     "Total Cost": total_cost,
                     "Passengers": json.dumps(passengers_list),
-                    "Passenger Count": len(passengers_list),
+                    "Passenger Count": 1 + len(passengers_list),
                     "Booking Date": str(booking_date),
                     "Status": status,
                     "Notes": notes,
@@ -399,7 +399,7 @@ with tab3:
             }
             # include passengers from edit textarea
             data["Passengers"] = json.dumps(passengers_edit_list)
-            data["Passenger Count"] = len(passengers_edit_list)
+            data["Passenger Count"] = 1 + len(passengers_edit_list)
 
             success, message = db.update_booking("flight", booking_id, data)
             if success:

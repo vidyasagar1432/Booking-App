@@ -208,7 +208,7 @@ with tab2:
                     "Class": train_class,
                     "Total Cost": total_cost,
                     "Passengers": json.dumps(passengers_list),
-                    "Passenger Count": len(passengers_list),
+                    "Passenger Count": 1 + len(passengers_list),
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
                     "Status": status,
                     "Notes": notes,
@@ -397,7 +397,7 @@ with tab3:
                 l.strip() for l in passengers_edit_text.splitlines() if l.strip()
             ]
             data["Passengers"] = json.dumps(passengers_edit_list)
-            data["Passenger Count"] = len(passengers_edit_list)
+            data["Passenger Count"] = 1 + len(passengers_edit_list)
 
             success, message = db.update_booking("train", booking_id, data)
             if success:
