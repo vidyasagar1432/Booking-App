@@ -23,7 +23,8 @@ class ExcelDatabase:
         """Create database file with sheets if it doesn't exist"""
         if not os.path.exists(self.db_path):
             wb = Workbook()
-            wb.remove(wb.active)  # Remove default sheet
+            if wb.active is not None:
+                wb.remove(wb.active)  # Remove default sheet
 
             # Create sheets for each booking type
             sheets = {

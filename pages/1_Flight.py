@@ -48,7 +48,11 @@ with tab1:
         with col4:
             st.metric("Cancelled", stats.get("cancelled", 0))
         with col5:
-            st.metric("Total Revenue", f"${stats.get('total_revenue', 0):,.2f}")
+            try:
+                rev = float(stats.get('total_revenue', 0))
+            except (ValueError, TypeError):
+                rev = 0.0
+            st.metric("Total Revenue", f"${rev:,.2f}")
 
         st.divider()
 
@@ -100,27 +104,32 @@ with tab1:
 with tab2:
     st.subheader("Add New Flight Booking")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
+        st.write("**Passenger Info**")
         passenger_name = st.text_input("Passenger Name *", key="flight_pname")
         email = st.text_input("Email", key="flight_email")
         phone = st.text_input("Phone Number *", key="flight_phone")
-        airline = st.text_input("Airline *", key="flight_airline")
         company_name = st.text_input("Company Name", key="flight_company")
-        flight_number = st.text_input("Flight Number *", key="flight_number")
+
+    with col2:
+        st.write("**Journey Details**")
         from_airport = st.text_input(
             "From Airport (Code) *", key="flight_from", placeholder="e.g., LAX"
         )
         to_airport = st.text_input(
             "To Airport (Code) *", key="flight_to", placeholder="e.g., JFK"
         )
-
-    with col2:
         departure_date = st.date_input("Departure Date *", key="flight_dep_date")
         departure_time = st.time_input("Departure Time", key="flight_dep_time")
         arrival_date = st.date_input("Arrival Date", key="flight_arr_date")
         arrival_time = st.time_input("Arrival Time", key="flight_arr_time")
+
+    with col3:
+        st.write("**Booking Details**")
+        airline = st.text_input("Airline *", key="flight_airline")
+        flight_number = st.text_input("Flight Number *", key="flight_number")
         seat_number = st.text_input(
             "Seat Number", key="flight_seat", placeholder="e.g., 12A"
         )
@@ -128,13 +137,18 @@ with tab2:
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="flight_cost"
         )
+        status = st.selectbox("Status", STATUS_OPTIONS, index=0, key="flight_status")
 
-    notes = st.text_area("Notes", height=100, key="flight_notes")
-    passengers_text = st.text_area(
-        "Passengers (one per line: Name|Company|Phone|Email)",
-        height=120,
-        key="flight_passengers_text",
-    )
+    col1, col2 = st.columns(2)
+
+    with col1:
+        notes = st.text_area("Notes", height=100, key="flight_notes")
+    with col2:
+        passengers_text = st.text_area(
+            "Passengers (one per line: Name|Company|Phone|Email)",
+            height=100,
+            key="flight_passengers_text",
+        )
 
     col1, col2 = st.columns([1, 4])
 
@@ -148,6 +162,7 @@ with tab2:
                 "Airline": airline,
                 "Company Name": company_name,
                 "Flight Number": flight_number,
+                "Departure Date": str(departure_date),
                 "From Airport": from_airport,
                 "To Airport": to_airport,
             }
@@ -185,7 +200,7 @@ with tab2:
                     "Passengers": json.dumps(passengers_list),
                     "Passenger Count": len(passengers_list),
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
-                    "Status": "Confirmed",
+                    "Status": status,
                     "Notes": notes,
                 }
 
@@ -290,9 +305,14 @@ with tab3:
                 ),
                 key="flight_edit_class",
             )
+            try:
+                total_cost_val = float(booking.get("Total Cost", 0))
+            except (ValueError, TypeError):
+                total_cost_val = 0.0
+            
             total_cost = st.number_input(
                 "Total Cost",
-                value=float(booking.get("Total Cost", 0)),
+                value=total_cost_val,
                 min_value=0.0,
                 step=0.01,
                 key="flight_edit_cost",
@@ -396,7 +416,11 @@ with tab4:
         with col2:
             st.write(f"**Departure Date:** {booking.get('Departure Date', 'N/A')}")
             st.write(f"**Status:** {booking.get('Status', 'N/A')}")
-            st.write(f"**Total Cost:** ${booking.get('Total Cost', 0):,.2f}")
+            try:
+                total_cost_val = float(booking.get('Total Cost', 0))
+            except (ValueError, TypeError):
+                total_cost_val = 0.0
+            st.write(f"**Total Cost:** ${total_cost_val:,.2f}")
 
         st.warning("⚠️ This action cannot be undone!")
 

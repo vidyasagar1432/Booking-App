@@ -48,7 +48,11 @@ with tab1:
         with col4:
             st.metric("Cancelled", stats.get("cancelled", 0))
         with col5:
-            st.metric("Total Revenue", f"${stats.get('total_revenue', 0):,.2f}")
+            try:
+                rev = float(stats.get("total_revenue", 0))
+            except (ValueError, TypeError):
+                rev = 0.0
+            st.metric("Total Revenue", f"${rev:,.2f}")
 
         st.divider()
 
@@ -98,36 +102,46 @@ with tab1:
 with tab2:
     st.subheader("Add New Bus Booking")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
+        st.write("**Passenger Info**")
         passenger_name = st.text_input("Passenger Name *", key="bus_pname")
         email = st.text_input("Email", key="bus_email")
         phone = st.text_input("Phone Number *", key="bus_phone")
-        bus_company = st.text_input("Bus Company *", key="bus_company")
         company_name = st.text_input("Company Name", key="bus_company_name")
-        bus_number = st.text_input("Bus Number", key="bus_number")
-        from_city = st.text_input("From City *", key="bus_from")
-        to_city = st.text_input("To City *", key="bus_to")
 
     with col2:
+        st.write("**Journey Details**")
+        from_city = st.text_input("From City *", key="bus_from")
+        to_city = st.text_input("To City *", key="bus_to")
         departure_date = st.date_input("Departure Date *", key="bus_dep_date")
         departure_time = st.time_input("Departure Time", key="bus_dep_time")
         arrival_date = st.date_input("Arrival Date", key="bus_arr_date")
         arrival_time = st.time_input("Arrival Time", key="bus_arr_time")
+
+    with col3:
+        st.write("**Booking Details**")
+        bus_company = st.text_input("Bus Company *", key="bus_company")
+        bus_number = st.text_input("Bus Number", key="bus_number")
         seat_number = st.text_input(
             "Seat Number", key="bus_seat", placeholder="e.g., A12"
         )
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="bus_cost"
         )
+        status = st.selectbox("Status", STATUS_OPTIONS, index=0, key="bus_status")
 
-    notes = st.text_area("Notes", height=100, key="bus_notes")
-    passengers_text = st.text_area(
-        "Passengers (one per line: Name|Company|Phone|Email)",
-        height=120,
-        key="bus_passengers_text",
-    )
+    col1, col2 = st.columns(2)
+
+    with col1:
+        notes = st.text_area("Notes", height=100, key="bus_notes")
+    with col2:
+        passengers_text = st.text_area(
+            "Passengers (one per line: Name|Seat|Email|Phone)",
+            height=100,
+            key="bus_passengers_text",
+        )
 
     col1, col2 = st.columns([1, 4])
 
@@ -177,7 +191,7 @@ with tab2:
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
                     "Passengers": json.dumps(passengers_list),
                     "Passenger Count": len(passengers_list),
-                    "Status": "Confirmed",
+                    "Status": status,
                     "Notes": notes,
                 }
 
@@ -268,9 +282,14 @@ with tab3:
             seat_number = st.text_input(
                 "Seat Number", value=booking.get("Seat Number", ""), key="bus_edit_seat"
             )
+            try:
+                total_cost_val = float(booking.get("Total Cost", 0))
+            except (ValueError, TypeError):
+                total_cost_val = 0.0
+
             total_cost = st.number_input(
                 "Total Cost",
-                value=float(booking.get("Total Cost", 0)),
+                value=total_cost_val,
                 min_value=0.0,
                 step=0.01,
                 key="bus_edit_cost",
@@ -382,7 +401,11 @@ with tab4:
             )
             st.write(f"**Departure Date:** {booking.get('Departure Date', 'N/A')}")
             st.write(f"**Status:** {booking.get('Status', 'N/A')}")
-            st.write(f"**Total Cost:** ${booking.get('Total Cost', 0):,.2f}")
+            try:
+                total_cost_val = float(booking.get("Total Cost", 0))
+            except (ValueError, TypeError):
+                total_cost_val = 0.0
+            st.write(f"**Total Cost:** ${total_cost_val:,.2f}")
 
         st.warning("⚠️ This action cannot be undone!")
 

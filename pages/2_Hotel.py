@@ -48,7 +48,11 @@ with tab1:
         with col4:
             st.metric("Cancelled", stats.get("cancelled", 0))
         with col5:
-            st.metric("Total Revenue", f"${stats.get('total_revenue', 0):,.2f}")
+            try:
+                rev = float(stats.get("total_revenue", 0))
+            except (ValueError, TypeError):
+                rev = 0.0
+            st.metric("Total Revenue", f"${rev:,.2f}")
 
         st.divider()
 
@@ -100,32 +104,34 @@ with tab1:
 with tab2:
     st.subheader("Add New Hotel Booking")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
+        st.write("**Guest Info**")
         guest_name = st.text_input("Guest Name *", key="hotel_gname")
         email = st.text_input("Email", key="hotel_email")
         phone = st.text_input("Phone Number *", key="hotel_phone")
-        hotel_name = st.text_input("Hotel Name *", key="hotel_name")
         company_name = st.text_input("Company Name", key="hotel_company")
-        city = st.text_input("City *", key="hotel_city")
-        room_type = st.selectbox("Room Type", ROOM_TYPES, key="hotel_room_type")
-        number_of_rooms = st.number_input(
-            "Number of Rooms", min_value=1, value=1, step=1, key="hotel_rooms"
-        )
 
     with col2:
+        st.write("**Stay Details**")
+        hotel_name = st.text_input("Hotel Name *", key="hotel_name")
+        city = st.text_input("City *", key="hotel_city")
         check_in_date = st.date_input("Check-in Date *", key="hotel_check_in")
         check_out_date = st.date_input(
             "Check-out Date *",
             value=check_in_date + timedelta(days=1),
             key="hotel_check_out",
         )
-
-        # Calculate number of nights
         nights = (check_out_date - check_in_date).days
         st.metric("Number of Nights", nights)
 
+    with col3:
+        st.write("**Booking Details**")
+        room_type = st.selectbox("Room Type", ROOM_TYPES, key="hotel_room_type")
+        number_of_rooms = st.number_input(
+            "Number of Rooms", min_value=1, value=1, step=1, key="hotel_rooms"
+        )
         total_guests = st.number_input(
             "Total Guests", min_value=1, value=1, step=1, key="hotel_guests"
         )
@@ -135,13 +141,18 @@ with tab2:
         total_cost = st.number_input(
             "Total Cost ($)", min_value=0.0, step=0.01, key="hotel_cost"
         )
+        status = st.selectbox("Status", STATUS_OPTIONS, index=0, key="hotel_status")
 
-    notes = st.text_area("Notes", height=100, key="hotel_notes")
-    passengers_text = st.text_area(
-        "Passengers (one per line: Name|Company|Phone|Email)",
-        height=120,
-        key="hotel_passengers_text",
-    )
+    col1, col2 = st.columns(2)
+
+    with col1:
+        notes = st.text_area("Notes", height=100, key="hotel_notes")
+    with col2:
+        passengers_text = st.text_area(
+            "Passengers (one per line: Name|Company|Phone|Email)",
+            height=100,
+            key="hotel_passengers_text",
+        )
 
     col1, col2 = st.columns([1, 4])
 
@@ -193,7 +204,7 @@ with tab2:
                     "Passenger Count": len(passengers_list),
                     "Total Cost": total_cost,
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
-                    "Status": "Confirmed",
+                    "Status": status,
                     "Confirmation Number": confirmation_number,
                     "Notes": notes,
                 }
@@ -256,9 +267,14 @@ with tab3:
                 ),
                 key="hotel_edit_room_type",
             )
+            try:
+                num_rooms_val = int(booking.get("Number of Rooms", 1))
+            except (ValueError, TypeError):
+                num_rooms_val = 1
+
             number_of_rooms = st.number_input(
                 "Number of Rooms",
-                value=int(booking.get("Number of Rooms", 1)),
+                value=num_rooms_val,
                 min_value=1,
                 step=1,
                 key="hotel_edit_rooms",
@@ -279,9 +295,14 @@ with tab3:
                 ).date(),
                 key="hotel_edit_check_out",
             )
+            try:
+                total_guests_val = int(booking.get("Total Guests", 1))
+            except (ValueError, TypeError):
+                total_guests_val = 1
+
             total_guests = st.number_input(
                 "Total Guests",
-                value=int(booking.get("Total Guests", 1)),
+                value=total_guests_val,
                 min_value=1,
                 step=1,
                 key="hotel_edit_guests",
@@ -291,9 +312,14 @@ with tab3:
                 value=booking.get("Confirmation Number", ""),
                 key="hotel_edit_conf_number",
             )
+            try:
+                total_cost_val = float(booking.get("Total Cost", 0))
+            except (ValueError, TypeError):
+                total_cost_val = 0.0
+
             total_cost = st.number_input(
                 "Total Cost",
-                value=float(booking.get("Total Cost", 0)),
+                value=total_cost_val,
                 min_value=0.0,
                 step=0.01,
                 key="hotel_edit_cost",
@@ -393,7 +419,11 @@ with tab4:
             st.write(f"**Check-in:** {booking.get('Check-in Date', 'N/A')}")
             st.write(f"**Check-out:** {booking.get('Check-out Date', 'N/A')}")
             st.write(f"**Status:** {booking.get('Status', 'N/A')}")
-            st.write(f"**Total Cost:** ${booking.get('Total Cost', 0):,.2f}")
+            try:
+                total_cost_val = float(booking.get("Total Cost", 0))
+            except (ValueError, TypeError):
+                total_cost_val = 0.0
+            st.write(f"**Total Cost:** ${total_cost_val:,.2f}")
 
         st.warning("⚠️ This action cannot be undone!")
 

@@ -29,7 +29,10 @@ for booking_type in BOOKING_TYPES.keys():
     stats = db.get_statistics(booking_type)
     all_stats[booking_type] = stats
     total_bookings += stats.get("total_bookings", 0)
-    total_revenue += stats.get("total_revenue", 0)
+    try:
+        total_revenue += float(stats.get("total_revenue", 0))
+    except (ValueError, TypeError):
+        total_revenue += 0
 
 # Top metrics
 col1, col2, col3, col4 = st.columns(4)
@@ -82,7 +85,10 @@ with col2:
     for booking_type in BOOKING_TYPES.keys():
         df = db.get_bookings(booking_type)
         if len(df) > 0 and "Total Cost" in df.columns:
-            revenue = df["Total Cost"].sum()
+            try:
+                revenue = pd.to_numeric(df["Total Cost"], errors="coerce").sum()
+            except Exception:
+                revenue = 0
         else:
             revenue = 0
         revenue_data.append({"Type": booking_type.capitalize(), "Revenue": revenue})
