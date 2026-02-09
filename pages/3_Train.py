@@ -124,6 +124,7 @@ with tab2:
 
     with col3:
         st.write("**Booking Details**")
+        booking_id_input = st.text_input("Booking ID *", key="train_booking_id")
         train_name = st.text_input("Train Name *", key="train_name")
         train_number = st.text_input("Train Number", key="train_number")
         coach = st.text_input("Coach", key="train_coach", placeholder="e.g., A1")
@@ -168,8 +169,19 @@ with tab2:
             if not is_valid:
                 st.error(f"❌ {error_msg}")
             else:
-                # Generate booking ID
-                booking_id = db.generate_booking_id("train")
+                # Handle booking ID
+                if booking_id_input.strip():
+                    df_existing = db.get_bookings("train")
+                    if booking_id_input in df_existing["Booking ID"].values:
+                        st.error(
+                            f"❌ Booking ID '{booking_id_input}' already exists. Please choose a different one."
+                        )
+                        st.stop()
+                    else:
+                        booking_id = booking_id_input.strip()
+                else:
+                    st.error("❌ Booking ID is required.")
+                    st.stop()
 
                 # Prepare complete data
                 passengers_list = [

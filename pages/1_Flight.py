@@ -49,7 +49,7 @@ with tab1:
             st.metric("Cancelled", stats.get("cancelled", 0))
         with col5:
             try:
-                rev = float(stats.get('total_revenue', 0))
+                rev = float(stats.get("total_revenue", 0))
             except (ValueError, TypeError):
                 rev = 0.0
             st.metric("Total Revenue", f"${rev:,.2f}")
@@ -128,6 +128,7 @@ with tab2:
 
     with col3:
         st.write("**Booking Details**")
+        booking_id_input = st.text_input("Booking ID *", key="flight_booking_id")
         airline = st.text_input("Airline *", key="flight_airline")
         flight_number = st.text_input("Flight Number *", key="flight_number")
         seat_number = st.text_input(
@@ -172,8 +173,19 @@ with tab2:
             if not is_valid:
                 st.error(f"❌ {error_msg}")
             else:
-                # Generate booking ID
-                booking_id = db.generate_booking_id("flight")
+                # Handle booking ID
+                if booking_id_input.strip():
+                    df_existing = db.get_bookings("flight")
+                    if booking_id_input in df_existing["Booking ID"].values:
+                        st.error(
+                            f"❌ Booking ID '{booking_id_input}' already exists. Please choose a different one."
+                        )
+                        st.stop()
+                    else:
+                        booking_id = booking_id_input.strip()
+                else:
+                    st.error("❌ Booking ID is required.")
+                    st.stop()
 
                 # Prepare passengers list and complete data
                 passengers_list = [
@@ -309,7 +321,7 @@ with tab3:
                 total_cost_val = float(booking.get("Total Cost", 0))
             except (ValueError, TypeError):
                 total_cost_val = 0.0
-            
+
             total_cost = st.number_input(
                 "Total Cost",
                 value=total_cost_val,
@@ -417,7 +429,7 @@ with tab4:
             st.write(f"**Departure Date:** {booking.get('Departure Date', 'N/A')}")
             st.write(f"**Status:** {booking.get('Status', 'N/A')}")
             try:
-                total_cost_val = float(booking.get('Total Cost', 0))
+                total_cost_val = float(booking.get("Total Cost", 0))
             except (ValueError, TypeError):
                 total_cost_val = 0.0
             st.write(f"**Total Cost:** ${total_cost_val:,.2f}")

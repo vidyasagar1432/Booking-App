@@ -128,6 +128,7 @@ with tab2:
 
     with col3:
         st.write("**Booking Details**")
+        booking_id_input = st.text_input("Booking ID *", key="hotel_booking_id")
         room_type = st.selectbox("Room Type", ROOM_TYPES, key="hotel_room_type")
         number_of_rooms = st.number_input(
             "Number of Rooms", min_value=1, value=1, step=1, key="hotel_rooms"
@@ -177,8 +178,19 @@ with tab2:
             elif check_out_date <= check_in_date:
                 st.error("❌ Check-out date must be after check-in date")
             else:
-                # Generate booking ID
-                booking_id = db.generate_booking_id("hotel")
+                # Handle booking ID
+                if booking_id_input.strip():
+                    df_existing = db.get_bookings("hotel")
+                    if booking_id_input in df_existing["Booking ID"].values:
+                        st.error(
+                            f"❌ Booking ID '{booking_id_input}' already exists. Please choose a different one."
+                        )
+                        st.stop()
+                    else:
+                        booking_id = booking_id_input.strip()
+                else:
+                    st.error("❌ Booking ID is required.")
+                    st.stop()
 
                 # Prepare passengers list and complete data
                 passengers_list = [
