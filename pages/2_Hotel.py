@@ -8,6 +8,7 @@ from datetime import datetime, date, timedelta
 from utils.excel_db import ExcelDatabase
 from utils.validators import Validators
 from config import HOTEL_FIELDS, ROOM_TYPES, STATUS_OPTIONS
+import json
 
 
 st.set_page_config(
@@ -136,6 +137,11 @@ with tab2:
         )
 
     notes = st.text_area("Notes", height=100, key="hotel_notes")
+    passengers_text = st.text_area(
+        "Passengers (one per line: Name|Company|Phone|Email)",
+        height=120,
+        key="hotel_passengers_text",
+    )
 
     col1, col2 = st.columns([1, 4])
 
@@ -163,6 +169,11 @@ with tab2:
                 # Generate booking ID
                 booking_id = db.generate_booking_id("hotel")
 
+                # Prepare passengers list and complete data
+                passengers_list = [
+                    l.strip() for l in passengers_text.splitlines() if l.strip()
+                ]
+
                 # Prepare complete data
                 complete_data = {
                     "Booking ID": booking_id,
@@ -178,6 +189,8 @@ with tab2:
                     "Room Type": room_type,
                     "Number of Rooms": number_of_rooms,
                     "Total Guests": total_guests,
+                    "Passengers": json.dumps(passengers_list),
+                    "Passenger Count": len(passengers_list),
                     "Total Cost": total_cost,
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
                     "Status": "Confirmed",
@@ -299,9 +312,33 @@ with tab3:
         notes = st.text_area(
             "Notes", value=booking.get("Notes", ""), height=100, key="hotel_edit_notes"
         )
+        # Prefill passengers text area from stored JSON (if available)
+        existing_passengers = booking.get("Passengers", "")
+        try:
+            if existing_passengers:
+                if isinstance(existing_passengers, str):
+                    parsed = json.loads(existing_passengers)
+                else:
+                    parsed = list(existing_passengers)
+                passengers_edit_text = "\n".join(parsed)
+            else:
+                passengers_edit_text = ""
+        except Exception:
+            passengers_edit_text = str(existing_passengers)
+
+        passengers_edit_text = st.text_area(
+            "Passengers (one per line: Name|Company|Phone|Email)",
+            value=passengers_edit_text,
+            height=120,
+            key="hotel_passengers_edit_text",
+        )
 
         if st.button("✏️ Update Booking", use_container_width=True):
             nights = (check_out_date - check_in_date).days
+            passengers_edit_list = [
+                l.strip() for l in passengers_edit_text.splitlines() if l.strip()
+            ]
+
             data = {
                 "Guest Name": guest_name,
                 "Email": email,
@@ -315,6 +352,8 @@ with tab3:
                 "Room Type": room_type,
                 "Number of Rooms": number_of_rooms,
                 "Total Guests": total_guests,
+                "Passengers": json.dumps(passengers_edit_list),
+                "Passenger Count": len(passengers_edit_list),
                 "Total Cost": total_cost,
                 "Status": status,
                 "Confirmation Number": confirmation_number,

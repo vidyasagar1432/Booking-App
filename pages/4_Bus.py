@@ -8,6 +8,7 @@ from datetime import datetime, date
 from utils.excel_db import ExcelDatabase
 from utils.validators import Validators
 from config import BUS_FIELDS, STATUS_OPTIONS
+import json
 
 
 st.set_page_config(
@@ -122,6 +123,11 @@ with tab2:
         )
 
     notes = st.text_area("Notes", height=100, key="bus_notes")
+    passengers_text = st.text_area(
+        "Passengers (one per line: Name|Company|Phone|Email)",
+        height=120,
+        key="bus_passengers_text",
+    )
 
     col1, col2 = st.columns([1, 4])
 
@@ -148,6 +154,10 @@ with tab2:
                 booking_id = db.generate_booking_id("bus")
 
                 # Prepare complete data
+                passengers_list = [
+                    l.strip() for l in passengers_text.splitlines() if l.strip()
+                ]
+
                 complete_data = {
                     "Booking ID": booking_id,
                     "Passenger Name": passenger_name,
@@ -165,6 +175,8 @@ with tab2:
                     "Seat Number": seat_number,
                     "Total Cost": total_cost,
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
+                    "Passengers": json.dumps(passengers_list),
+                    "Passenger Count": len(passengers_list),
                     "Status": "Confirmed",
                     "Notes": notes,
                 }
@@ -298,6 +310,23 @@ with tab3:
                 "Notes": notes,
             }
 
+            # For bus updates, derive passenger count from stored passengers if not explicitly edited
+            try:
+                existing_passengers = booking.get("Passengers", "")
+                if existing_passengers:
+                    parsed = (
+                        json.loads(existing_passengers)
+                        if isinstance(existing_passengers, str)
+                        else list(existing_passengers)
+                    )
+                else:
+                    parsed = []
+            except Exception:
+                parsed = []
+
+            data["Passengers"] = json.dumps(parsed)
+            data["Passenger Count"] = len(parsed)
+
             success, message = db.update_booking("bus", booking_id, data)
             if success:
                 st.success(message)
@@ -330,6 +359,26 @@ with tab4:
         with col2:
             st.write(
                 f"**Route:** {booking.get('From City', 'N/A')} → {booking.get('To City', 'N/A')}"
+            )
+            # Prefill passengers text area from stored JSON (if available)
+            existing_passengers = booking.get("Passengers", "")
+            try:
+                if existing_passengers:
+                    if isinstance(existing_passengers, str):
+                        parsed = json.loads(existing_passengers)
+                    else:
+                        parsed = list(existing_passengers)
+                    passengers_edit_text = "\n".join(parsed)
+                else:
+                    passengers_edit_text = ""
+            except Exception:
+                passengers_edit_text = str(existing_passengers)
+
+            passengers_edit_text = st.text_area(
+                "Passengers (one per line: Name|Company|Phone|Email)",
+                value=passengers_edit_text,
+                height=120,
+                key="bus_passengers_edit_text",
             )
             st.write(f"**Departure Date:** {booking.get('Departure Date', 'N/A')}")
             st.write(f"**Status:** {booking.get('Status', 'N/A')}")

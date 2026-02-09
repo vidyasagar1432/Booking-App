@@ -8,6 +8,7 @@ from datetime import datetime, date
 from utils.excel_db import ExcelDatabase
 from utils.validators import Validators
 from config import TRAIN_FIELDS, CLASS_OPTIONS, STATUS_OPTIONS
+import json
 
 
 st.set_page_config(
@@ -126,6 +127,11 @@ with tab2:
         )
 
     notes = st.text_area("Notes", height=100, key="train_notes")
+    passengers_text = st.text_area(
+        "Passengers (one per line: Name|Company|Phone|Email)",
+        height=120,
+        key="train_passengers_text",
+    )
 
     col1, col2 = st.columns([1, 4])
 
@@ -152,6 +158,10 @@ with tab2:
                 booking_id = db.generate_booking_id("train")
 
                 # Prepare complete data
+                passengers_list = [
+                    l.strip() for l in passengers_text.splitlines() if l.strip()
+                ]
+
                 complete_data = {
                     "Booking ID": booking_id,
                     "Passenger Name": passenger_name,
@@ -170,6 +180,8 @@ with tab2:
                     "Seat Number": seat_number,
                     "Class": train_class,
                     "Total Cost": total_cost,
+                    "Passengers": json.dumps(passengers_list),
+                    "Passenger Count": len(passengers_list),
                     "Booking Date": datetime.now().strftime("%Y-%m-%d"),
                     "Status": "Confirmed",
                     "Notes": notes,
@@ -300,6 +312,26 @@ with tab3:
         notes = st.text_area(
             "Notes", value=booking.get("Notes", ""), height=100, key="train_edit_notes"
         )
+        # Prefill passengers text area from stored JSON (if available)
+        existing_passengers = booking.get("Passengers", "")
+        try:
+            if existing_passengers:
+                if isinstance(existing_passengers, str):
+                    parsed = json.loads(existing_passengers)
+                else:
+                    parsed = list(existing_passengers)
+                passengers_edit_text = "\n".join(parsed)
+            else:
+                passengers_edit_text = ""
+        except Exception:
+            passengers_edit_text = str(existing_passengers)
+
+        passengers_edit_text = st.text_area(
+            "Passengers (one per line: Name|Company|Phone|Email)",
+            value=passengers_edit_text,
+            height=120,
+            key="train_passengers_edit_text",
+        )
 
         if st.button("✏️ Update Booking", use_container_width=True):
             data = {
@@ -322,6 +354,11 @@ with tab3:
                 "Status": status,
                 "Notes": notes,
             }
+            passengers_edit_list = [
+                l.strip() for l in passengers_edit_text.splitlines() if l.strip()
+            ]
+            data["Passengers"] = json.dumps(passengers_edit_list)
+            data["Passenger Count"] = len(passengers_edit_list)
 
             success, message = db.update_booking("train", booking_id, data)
             if success:
