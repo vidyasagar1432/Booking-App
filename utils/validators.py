@@ -11,8 +11,12 @@ class Validators:
     """Data validation methods"""
 
     @staticmethod
-    def validate_email(email: str) -> Tuple[bool, str]:
-        """Validate email format"""
+    def validate_email(email: str, optional: bool = False) -> Tuple[bool, str]:
+        """Validate email format (optional by default)"""
+        if optional and not email:
+            return True, ""
+        if not email:
+            return False, "Email is required"
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if re.match(pattern, email):
             return True, ""
@@ -70,7 +74,6 @@ class Validators:
         """Validate flight booking data"""
         required_fields = [
             "Passenger Name",
-            "Email",
             "Phone",
             "Airline",
             "Flight Number",
@@ -86,8 +89,8 @@ class Validators:
             if not is_valid:
                 return False, msg
 
-        # Validate email
-        is_valid, msg = Validators.validate_email(data.get("Email", ""))
+        # Validate email (optional)
+        is_valid, msg = Validators.validate_email(data.get("Email", ""), optional=True)
         if not is_valid:
             return False, msg
 
@@ -109,7 +112,6 @@ class Validators:
         """Validate hotel booking data"""
         required_fields = [
             "Guest Name",
-            "Email",
             "Phone",
             "Hotel Name",
             "City",
@@ -124,8 +126,8 @@ class Validators:
             if not is_valid:
                 return False, msg
 
-        # Validate email
-        is_valid, msg = Validators.validate_email(data.get("Email", ""))
+        # Validate email (optional)
+        is_valid, msg = Validators.validate_email(data.get("Email", ""), optional=True)
         if not is_valid:
             return False, msg
 
@@ -147,7 +149,6 @@ class Validators:
         """Validate train booking data"""
         required_fields = [
             "Passenger Name",
-            "Email",
             "Phone",
             "Train Name",
             "Departure Date",
@@ -162,8 +163,8 @@ class Validators:
             if not is_valid:
                 return False, msg
 
-        # Validate email
-        is_valid, msg = Validators.validate_email(data.get("Email", ""))
+        # Validate email (optional)
+        is_valid, msg = Validators.validate_email(data.get("Email", ""), optional=True)
         if not is_valid:
             return False, msg
 
@@ -185,7 +186,6 @@ class Validators:
         """Validate bus booking data"""
         required_fields = [
             "Passenger Name",
-            "Email",
             "Phone",
             "Bus Company",
             "Departure Date",
@@ -200,8 +200,8 @@ class Validators:
             if not is_valid:
                 return False, msg
 
-        # Validate email
-        is_valid, msg = Validators.validate_email(data.get("Email", ""))
+        # Validate email (optional)
+        is_valid, msg = Validators.validate_email(data.get("Email", ""), optional=True)
         if not is_valid:
             return False, msg
 

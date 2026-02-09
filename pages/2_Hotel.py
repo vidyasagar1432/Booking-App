@@ -103,9 +103,10 @@ with tab2:
 
     with col1:
         guest_name = st.text_input("Guest Name *", key="hotel_gname")
-        email = st.text_input("Email *", key="hotel_email")
+        email = st.text_input("Email", key="hotel_email")
         phone = st.text_input("Phone Number *", key="hotel_phone")
         hotel_name = st.text_input("Hotel Name *", key="hotel_name")
+        company_name = st.text_input("Company Name", key="hotel_company")
         city = st.text_input("City *", key="hotel_city")
         room_type = st.selectbox("Room Type", ROOM_TYPES, key="hotel_room_type")
         number_of_rooms = st.number_input(
@@ -146,6 +147,7 @@ with tab2:
                 "Email": email,
                 "Phone": phone,
                 "Hotel Name": hotel_name,
+                "Company Name": company_name,
                 "City": city,
                 "Check-in Date": str(check_in_date),
                 "Check-out Date": str(check_out_date),
@@ -168,6 +170,7 @@ with tab2:
                     "Email": email,
                     "Phone": phone,
                     "Hotel Name": hotel_name,
+                    "Company Name": company_name,
                     "City": city,
                     "Check-in Date": str(check_in_date),
                     "Check-out Date": str(check_out_date),
@@ -221,6 +224,11 @@ with tab3:
             )
             hotel_name = st.text_input(
                 "Hotel Name", value=booking.get("Hotel Name", ""), key="hotel_edit_name"
+            )
+            company_name = st.text_input(
+                "Company Name",
+                value=booking.get("Company Name", ""),
+                key="hotel_edit_company",
             )
             city = st.text_input(
                 "City", value=booking.get("City", ""), key="hotel_edit_city"
@@ -299,6 +307,7 @@ with tab3:
                 "Email": email,
                 "Phone": phone,
                 "Hotel Name": hotel_name,
+                "Company Name": company_name,
                 "City": city,
                 "Check-in Date": str(check_in_date),
                 "Check-out Date": str(check_out_date),

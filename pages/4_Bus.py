@@ -101,9 +101,10 @@ with tab2:
 
     with col1:
         passenger_name = st.text_input("Passenger Name *", key="bus_pname")
-        email = st.text_input("Email *", key="bus_email")
+        email = st.text_input("Email", key="bus_email")
         phone = st.text_input("Phone Number *", key="bus_phone")
         bus_company = st.text_input("Bus Company *", key="bus_company")
+        company_name = st.text_input("Company Name", key="bus_company_name")
         bus_number = st.text_input("Bus Number", key="bus_number")
         from_city = st.text_input("From City *", key="bus_from")
         to_city = st.text_input("To City *", key="bus_to")
@@ -132,6 +133,7 @@ with tab2:
                 "Email": email,
                 "Phone": phone,
                 "Bus Company": bus_company,
+                "Company Name": company_name,
                 "Departure Date": str(departure_date),
                 "From City": from_city,
                 "To City": to_city,
@@ -152,6 +154,7 @@ with tab2:
                     "Email": email,
                     "Phone": phone,
                     "Bus Company": bus_company,
+                    "Company Name": company_name,
                     "Bus Number": bus_number,
                     "Departure Date": str(departure_date),
                     "Departure Time": str(departure_time),
@@ -207,6 +210,11 @@ with tab3:
                 "Bus Company",
                 value=booking.get("Bus Company", ""),
                 key="bus_edit_company",
+            )
+            company_name = st.text_input(
+                "Company Name",
+                value=booking.get("Company Name", ""),
+                key="bus_edit_company_name",
             )
             bus_number = st.text_input(
                 "Bus Number", value=booking.get("Bus Number", ""), key="bus_edit_number"
@@ -276,6 +284,7 @@ with tab3:
                 "Email": email,
                 "Phone": phone,
                 "Bus Company": bus_company,
+                "Company Name": company_name,
                 "Bus Number": bus_number,
                 "Departure Date": str(departure_date),
                 "Departure Time": departure_time,

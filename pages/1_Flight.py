@@ -103,9 +103,10 @@ with tab2:
 
     with col1:
         passenger_name = st.text_input("Passenger Name *", key="flight_pname")
-        email = st.text_input("Email *", key="flight_email")
+        email = st.text_input("Email", key="flight_email")
         phone = st.text_input("Phone Number *", key="flight_phone")
         airline = st.text_input("Airline *", key="flight_airline")
+        company_name = st.text_input("Company Name", key="flight_company")
         flight_number = st.text_input("Flight Number *", key="flight_number")
         from_airport = st.text_input(
             "From Airport (Code) *", key="flight_from", placeholder="e.g., LAX"
@@ -139,6 +140,7 @@ with tab2:
                 "Email": email,
                 "Phone": phone,
                 "Airline": airline,
+                "Company Name": company_name,
                 "Flight Number": flight_number,
                 "From Airport": from_airport,
                 "To Airport": to_airport,
@@ -159,6 +161,7 @@ with tab2:
                     "Email": email,
                     "Phone": phone,
                     "Airline": airline,
+                    "Company Name": company_name,
                     "Flight Number": flight_number,
                     "Departure Date": departure_date,
                     "Departure Time": str(departure_time),
@@ -213,6 +216,11 @@ with tab3:
             )
             airline = st.text_input(
                 "Airline", value=booking.get("Airline", ""), key="flight_edit_airline"
+            )
+            company_name = st.text_input(
+                "Company Name",
+                value=booking.get("Company Name", ""),
+                key="flight_edit_company",
             )
             flight_number = st.text_input(
                 "Flight Number",
@@ -298,6 +306,7 @@ with tab3:
                 "Email": email,
                 "Phone": phone,
                 "Airline": airline,
+                "Company Name": company_name,
                 "Flight Number": flight_number,
                 "From Airport": from_airport,
                 "To Airport": to_airport,

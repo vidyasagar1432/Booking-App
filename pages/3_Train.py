@@ -103,9 +103,10 @@ with tab2:
 
     with col1:
         passenger_name = st.text_input("Passenger Name *", key="train_pname")
-        email = st.text_input("Email *", key="train_email")
+        email = st.text_input("Email", key="train_email")
         phone = st.text_input("Phone Number *", key="train_phone")
         train_name = st.text_input("Train Name *", key="train_name")
+        company_name = st.text_input("Company Name", key="train_company")
         train_number = st.text_input("Train Number", key="train_number")
         from_station = st.text_input("From Station *", key="train_from")
         to_station = st.text_input("To Station *", key="train_to")
@@ -136,6 +137,7 @@ with tab2:
                 "Email": email,
                 "Phone": phone,
                 "Train Name": train_name,
+                "Company Name": company_name,
                 "Departure Date": str(departure_date),
                 "From Station": from_station,
                 "To Station": to_station,
@@ -156,6 +158,7 @@ with tab2:
                     "Email": email,
                     "Phone": phone,
                     "Train Name": train_name,
+                    "Company Name": company_name,
                     "Train Number": train_number,
                     "Departure Date": str(departure_date),
                     "Departure Time": str(departure_time),
@@ -211,6 +214,11 @@ with tab3:
             )
             train_name = st.text_input(
                 "Train Name", value=booking.get("Train Name", ""), key="train_edit_name"
+            )
+            company_name = st.text_input(
+                "Company Name",
+                value=booking.get("Company Name", ""),
+                key="train_edit_company",
             )
             train_number = st.text_input(
                 "Train Number",
@@ -299,6 +307,7 @@ with tab3:
                 "Email": email,
                 "Phone": phone,
                 "Train Name": train_name,
+                "Company Name": company_name,
                 "Train Number": train_number,
                 "Departure Date": str(departure_date),
                 "Departure Time": departure_time,
