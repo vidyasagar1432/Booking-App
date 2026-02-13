@@ -1,6 +1,2 @@
-"""Utilities package"""
+"""Shared utilities for the booking Streamlit app."""
 
-from .excel_db import ExcelDatabase
-from .validators import Validators
-
-__all__ = ["ExcelDatabase", "Validators"]

@@ -1,293 +1,149 @@
-"""
-Excel database utilities for booking app
-Handles all database operations with Excel files
-"""
+from __future__ import annotations
+
+import threading
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+from uuid import uuid4
 
 import pandas as pd
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from datetime import datetime
-import os
-from typing import Dict, List, Optional
-from config import DB_FILE, FLIGHT_FIELDS, HOTEL_FIELDS, TRAIN_FIELDS, BUS_FIELDS
+
+UPDATE_SHEET_NAME = "update time"
+DEFAULT_BOOKING_SHEETS = ("Flight", "Hotel", "Train", "Bus")
 
 
-class ExcelDatabase:
-    """Handle all Excel database operations"""
+class ExcelDB:
+    """Thin Excel-backed storage layer for booking operations."""
 
-    def __init__(self, db_path: str = str(DB_FILE)):
-        self.db_path = db_path
-        self.ensure_database_exists()
+    def __init__(self, file_path: Path | str) -> None:
+        self.file_path = Path(file_path)
+        self._lock = threading.Lock()
+        if not self.file_path.exists():
+            raise FileNotFoundError(f"Workbook not found: {self.file_path}")
 
-    def ensure_database_exists(self):
-        """Create database file with sheets if it doesn't exist"""
-        if not os.path.exists(self.db_path):
-            wb = Workbook()
-            if wb.active is not None:
-                wb.remove(wb.active)  # Remove default sheet
+    def _read_workbook(self) -> dict[str, pd.DataFrame]:
+        return pd.read_excel(self.file_path, sheet_name=None, engine="openpyxl")
 
-            # Create sheets for each booking type
-            sheets = {
-                "Flight": FLIGHT_FIELDS,
-                "Hotel": HOTEL_FIELDS,
-                "Train": TRAIN_FIELDS,
-                "Bus": BUS_FIELDS,
-            }
+    def _write_workbook(self, sheets: dict[str, pd.DataFrame]) -> None:
+        with pd.ExcelWriter(self.file_path, engine="openpyxl", mode="w") as writer:
+            for sheet_name, frame in sheets.items():
+                frame.to_excel(writer, sheet_name=sheet_name, index=False)
 
-            for sheet_name, fields in sheets.items():
-                ws = wb.create_sheet(sheet_name)
-                self._format_header(ws, fields)
-
-            wb.save(self.db_path)
-
-    def _format_header(self, worksheet, headers: List[str]):
-        """Format header row with styling"""
-        for col_num, header in enumerate(headers, 1):
-            cell = worksheet.cell(row=1, column=col_num)
-            cell.value = header
-            cell.font = Font(bold=True, color="FFFFFF", size=11)
-            cell.fill = PatternFill(
-                start_color="1F4E78", end_color="1F4E78", fill_type="solid"
-            )
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = Border(
-                left=Side(style="thin"),
-                right=Side(style="thin"),
-                top=Side(style="thin"),
-                bottom=Side(style="thin"),
-            )
-
-        # Set column widths
-        for col_num in range(1, len(headers) + 1):
-            worksheet.column_dimensions[
-                worksheet.cell(1, col_num).column_letter
-            ].width = 18
-
-    def add_booking(self, booking_type: str, data: Dict) -> tuple[bool, str]:
-        """
-        Add a new booking record
-        Returns: (success: bool, message: str)
-        """
-        try:
-            sheet_name = booking_type.capitalize()
-            df = pd.read_excel(self.db_path, sheet_name=sheet_name)
-
-            # Add new row
-            new_row = pd.DataFrame([data])
-            df = pd.concat([df, new_row], ignore_index=True)
-
-            # Write back to Excel
-            with pd.ExcelWriter(
-                self.db_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-            ) as writer:
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-            # Reformat headers
-            wb = load_workbook(self.db_path)
-            ws = wb[sheet_name]
-            fields = self._get_fields_for_type(booking_type)
-            self._format_header(ws, fields)
-            wb.save(self.db_path)
-
-            return True, f"✅ {booking_type.capitalize()} booking added successfully!"
-
-        except Exception as e:
-            return False, f"❌ Error adding booking: {str(e)}"
-
-    def get_bookings(self, booking_type: str) -> pd.DataFrame:
-        """Get all bookings of a specific type"""
-        try:
-            sheet_name = booking_type.capitalize()
-            df = pd.read_excel(self.db_path, sheet_name=sheet_name)
-            return df
-        except Exception as e:
-            print(f"Error reading bookings: {e}")
-            return pd.DataFrame()
-
-    def update_booking(
-        self, booking_type: str, booking_id: str, data: Dict
-    ) -> tuple[bool, str]:
-        """
-        Update an existing booking record
-        Returns: (success: bool, message: str)
-        """
-        try:
-            sheet_name = booking_type.capitalize()
-            df = pd.read_excel(self.db_path, sheet_name=sheet_name)
-
-            # Find and update the booking
-            if "Booking ID" not in df.columns:
-                return False, "Booking ID column not found"
-
-            mask = df["Booking ID"] == booking_id
-            if not mask.any():
-                return False, f"Booking ID {booking_id} not found"
-
-            # Update the row
-            index = df[mask].index[0]
-            for key, value in data.items():
-                if key in df.columns:
-                    df.at[index, key] = value
-
-            # Write back to Excel
-            with pd.ExcelWriter(
-                self.db_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-            ) as writer:
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-            # Reformat headers
-            wb = load_workbook(self.db_path)
-            ws = wb[sheet_name]
-            fields = self._get_fields_for_type(booking_type)
-            self._format_header(ws, fields)
-            wb.save(self.db_path)
-
-            return True, f"✅ {booking_type.capitalize()} booking updated successfully!"
-
-        except Exception as e:
-            return False, f"❌ Error updating booking: {str(e)}"
-
-    def delete_booking(self, booking_type: str, booking_id: str) -> tuple[bool, str]:
-        """
-        Delete a booking record
-        Returns: (success: bool, message: str)
-        """
-        try:
-            sheet_name = booking_type.capitalize()
-            df = pd.read_excel(self.db_path, sheet_name=sheet_name)
-
-            if "Booking ID" not in df.columns:
-                return False, "Booking ID column not found"
-
-            initial_len = len(df)
-            df = df[df["Booking ID"] != booking_id]
-
-            if len(df) == initial_len:
-                return False, f"Booking ID {booking_id} not found"
-
-            # Write back to Excel
-            with pd.ExcelWriter(
-                self.db_path, engine="openpyxl", mode="a", if_sheet_exists="replace"
-            ) as writer:
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-            # Reformat headers
-            wb = load_workbook(self.db_path)
-            ws = wb[sheet_name]
-            fields = self._get_fields_for_type(booking_type)
-            self._format_header(ws, fields)
-            wb.save(self.db_path)
-
-            return True, f"✅ {booking_type.capitalize()} booking deleted successfully!"
-
-        except Exception as e:
-            return False, f"❌ Error deleting booking: {str(e)}"
-
-    def search_bookings(
-        self, booking_type: str, search_field: str, search_value: str
+    def _normalize_dataframe(
+        self, frame: pd.DataFrame, reference_columns: list[str]
     ) -> pd.DataFrame:
-        """Search bookings by a specific field"""
-        try:
-            df = self.get_bookings(booking_type)
+        normalized = frame.copy()
+        for column in reference_columns:
+            if column not in normalized.columns:
+                normalized[column] = ""
+        normalized = normalized[reference_columns]
+        return normalized.where(pd.notna(normalized), "")
 
-            if search_field not in df.columns:
-                return pd.DataFrame()
+    def booking_sheets(self) -> list[str]:
+        workbook = self._read_workbook()
+        available = [sheet for sheet in DEFAULT_BOOKING_SHEETS if sheet in workbook]
+        if available:
+            return available
+        return [sheet for sheet in workbook if sheet.lower() != UPDATE_SHEET_NAME.lower()]
 
-            # Case-insensitive search
-            mask = (
-                df[search_field]
-                .astype(str)
-                .str.contains(search_value, case=False, na=False)
-            )
-            return df[mask]
+    def get_sheet(self, sheet_name: str) -> pd.DataFrame:
+        workbook = self._read_workbook()
+        if sheet_name not in workbook:
+            raise ValueError(f"Sheet not found: {sheet_name}")
+        return workbook[sheet_name].copy()
 
-        except Exception as e:
-            print(f"Error searching bookings: {e}")
-            return pd.DataFrame()
+    def get_all_booking_data(self) -> dict[str, pd.DataFrame]:
+        workbook = self._read_workbook()
+        return {sheet: workbook[sheet].copy() for sheet in self.booking_sheets()}
 
-    def filter_by_date_range(
-        self, booking_type: str, date_field: str, start_date, end_date
-    ) -> pd.DataFrame:
-        """Filter bookings by date range"""
-        try:
-            df = self.get_bookings(booking_type)
+    def _build_update_sheet(self) -> pd.DataFrame:
+        now = datetime.now()
+        return pd.DataFrame(
+            [{"Updated on": now.date().isoformat(), "TIme": now.strftime("%H:%M:%S")}]
+        )
 
-            if date_field not in df.columns:
-                return pd.DataFrame()
+    def save_sheet(self, sheet_name: str, frame: pd.DataFrame) -> None:
+        with self._lock:
+            workbook = self._read_workbook()
+            if sheet_name not in workbook:
+                raise ValueError(f"Sheet not found: {sheet_name}")
 
-            df[date_field] = pd.to_datetime(df[date_field], errors="coerce")
-            mask = (df[date_field] >= start_date) & (df[date_field] <= end_date)
-            return df[mask]
+            reference_columns = list(workbook[sheet_name].columns)
+            workbook[sheet_name] = self._normalize_dataframe(frame, reference_columns)
+            workbook[UPDATE_SHEET_NAME] = self._build_update_sheet()
+            self._write_workbook(workbook)
 
-        except Exception as e:
-            print(f"Error filtering by date: {e}")
-            return pd.DataFrame()
+    def append_record(self, sheet_name: str, record: dict[str, Any]) -> str:
+        current = self.get_sheet(sheet_name)
+        record_row: dict[str, Any] = {}
+        for column in current.columns:
+            record_row[column] = record.get(column, "")
 
-    def get_statistics(self, booking_type: str) -> Dict:
-        """Get statistics for a booking type"""
-        try:
-            df = self.get_bookings(booking_type)
+        if "Booking ID" in current.columns and not str(
+            record_row.get("Booking ID", "")
+        ).strip():
+            record_row["Booking ID"] = self.generate_booking_id(sheet_name)
 
-            stats = {
-                "total_bookings": len(df),
-                "confirmed": (
-                    len(df[df["Status"] == "Confirmed"])
-                    if "Status" in df.columns
-                    else 0
-                ),
-                "pending": (
-                    len(df[df["Status"] == "Pending"]) if "Status" in df.columns else 0
-                ),
-                "cancelled": (
-                    len(df[df["Status"] == "Cancelled"])
-                    if "Status" in df.columns
-                    else 0
-                ),
-            }
+        updated = pd.concat([current, pd.DataFrame([record_row])], ignore_index=True)
+        self.save_sheet(sheet_name, updated)
+        return str(record_row.get("Booking ID", ""))
 
-            if "Total Cost" in df.columns:
-                stats["total_revenue"] = df["Total Cost"].sum()
+    def generate_booking_id(self, sheet_name: str) -> str:
+        prefix_map = {"Flight": "FL", "Hotel": "HT", "Train": "TR", "Bus": "BS"}
+        prefix = prefix_map.get(sheet_name, (sheet_name[:2] or "BK").upper())
+        timestamp = datetime.now().strftime("%y%m%d%H%M%S")
+        suffix = uuid4().hex[:4].upper()
+        return f"{prefix}{timestamp}{suffix}"
 
-            return stats
+    def update_record(
+        self, sheet_name: str, booking_id: str, updates: dict[str, Any]
+    ) -> bool:
+        current = self.get_sheet(sheet_name)
+        if "Booking ID" not in current.columns:
+            return False
 
-        except Exception as e:
-            print(f"Error getting statistics: {e}")
-            return {}
+        booking_id_value = str(booking_id).strip()
+        matches = current["Booking ID"].astype(str).str.strip() == booking_id_value
+        if not matches.any():
+            return False
 
-    def export_to_csv(self, booking_type: str, output_path: str) -> tuple[bool, str]:
-        """Export bookings to CSV"""
-        try:
-            df = self.get_bookings(booking_type)
-            df.to_csv(output_path, index=False)
-            return True, f"✅ Exported to {output_path}"
-        except Exception as e:
-            return False, f"❌ Error exporting: {str(e)}"
+        row_index = current[matches].index[0]
+        for column, value in updates.items():
+            if column in current.columns:
+                current.at[row_index, column] = value
 
-    @staticmethod
-    def _get_fields_for_type(booking_type: str) -> List[str]:
-        """Get field list for booking type"""
-        type_map = {
-            "flight": FLIGHT_FIELDS,
-            "hotel": HOTEL_FIELDS,
-            "train": TRAIN_FIELDS,
-            "bus": BUS_FIELDS,
-        }
-        return type_map.get(booking_type.lower(), [])
+        self.save_sheet(sheet_name, current)
+        return True
 
-    def generate_booking_id(self, booking_type: str) -> str:
-        """Generate unique booking ID"""
-        prefix = booking_type[:2].upper()
-        df = self.get_bookings(booking_type)
+    def delete_record(self, sheet_name: str, booking_id: str) -> bool:
+        current = self.get_sheet(sheet_name)
+        if "Booking ID" not in current.columns:
+            return False
 
-        if len(df) == 0:
-            return f"{prefix}001"
+        booking_id_value = str(booking_id).strip()
+        matches = current["Booking ID"].astype(str).str.strip() == booking_id_value
+        if not matches.any():
+            return False
 
-        try:
-            last_id = df["Booking ID"].iloc[-1]
-            if isinstance(last_id, str) and last_id.startswith(prefix):
-                number = int(last_id[2:]) + 1
-                return f"{prefix}{number:03d}"
-        except (ValueError, IndexError):
-            pass
+        updated = current.loc[~matches].reset_index(drop=True)
+        self.save_sheet(sheet_name, updated)
+        return True
 
-        return f"{prefix}{len(df) + 1:03d}"
+    def get_last_updated(self) -> str:
+        workbook = self._read_workbook()
+        update_sheet = workbook.get(UPDATE_SHEET_NAME)
+        if update_sheet is None or update_sheet.empty:
+            return "Unknown"
+
+        row = update_sheet.iloc[0]
+        updated_on = row.get("Updated on", "")
+        updated_time = row.get("TIme", "")
+
+        if pd.notna(updated_on) and hasattr(updated_on, "strftime"):
+            updated_on_str = updated_on.strftime("%Y-%m-%d")
+        else:
+            updated_on_str = str(updated_on).strip()
+
+        updated_time_str = str(updated_time).strip()
+        timestamp = " ".join(part for part in [updated_on_str, updated_time_str] if part)
+        return timestamp or "Unknown"

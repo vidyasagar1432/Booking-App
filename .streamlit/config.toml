@@ -1,18 +1,12 @@
-[theme]
-primaryColor = "#FF6B6B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
-font = "sans serif"
-
-[client]
-showErrorDetails = false
-
-[logger]
-level = "info"
-
 [server]
-address = "127.0.0.1"
-port = 8501
 headless = true
 runOnSave = true
+
+[theme]
+base = "light"
+primaryColor = "#0F766E"
+backgroundColor = "#F7FAFC"
+secondaryBackgroundColor = "#E6FFFA"
+textColor = "#102A43"
+font = "sans serif"
+
