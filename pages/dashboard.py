@@ -17,10 +17,9 @@ def render() -> None:
         st.info("No booking records available yet.")
         return
 
-    today = pd.Timestamp.today().normalize()
     total_bookings = len(bookings)
     total_spend = float(bookings["Total Cost"].sum())
-    upcoming_count = int((bookings["Trip Date"] >= today).sum())
+    upcoming_count = int(bookings["Is Upcoming"].fillna(False).sum())
     completed_count = int(
         bookings["Status"].str.lower().str.strip().eq("travelled").sum()
     )
@@ -60,22 +59,22 @@ def render() -> None:
         monthly_spend = trend_source.groupby("Month")["Total Cost"].sum().sort_index()
         st.line_chart(monthly_spend, width="stretch")
 
-    upcoming = (
-        bookings.loc[bookings["Trip Date"] >= today]
-        .sort_values("Trip Date")
-        .head(20)
-        .copy()
-    )
+    upcoming = bookings.loc[bookings["Is Upcoming"].fillna(False)].copy()
+    upcoming = upcoming.sort_values(["Trip Start", "Trip End"], na_position="last").head(20)
     if not upcoming.empty:
         st.subheader("Upcoming Bookings")
         display_columns = [
             "Mode",
             "Booking ID",
             "Traveler",
-            "Trip Date",
+            "Trip Start",
+            "Trip End",
             "Status",
             "Total Cost",
         ]
         safe_columns = [column for column in display_columns if column in upcoming.columns]
-        upcoming["Trip Date"] = upcoming["Trip Date"].dt.strftime("%Y-%m-%d")
+        if "Trip Start" in upcoming.columns:
+            upcoming["Trip Start"] = upcoming["Trip Start"].dt.strftime("%Y-%m-%d")
+        if "Trip End" in upcoming.columns:
+            upcoming["Trip End"] = upcoming["Trip End"].dt.strftime("%Y-%m-%d")
         st.dataframe(upcoming[safe_columns], width="stretch", hide_index=True)

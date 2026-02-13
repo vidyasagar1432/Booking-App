@@ -4,9 +4,9 @@ import pandas as pd
 import streamlit as st
 
 from utils.app_utils import (
+    compute_upcoming_mask,
     format_currency,
     get_db,
-    infer_trip_date_column,
     parse_user_input,
     to_display_frame,
 )
@@ -47,11 +47,7 @@ def render_mode_booking(mode: str) -> None:
 
     total_bookings = len(mode_df)
     total_cost = float(pd.to_numeric(mode_df.get("Total Cost"), errors="coerce").fillna(0).sum())
-    upcoming = 0
-    trip_date_col = infer_trip_date_column(mode_df)
-    if trip_date_col:
-        trip_dates = pd.to_datetime(mode_df[trip_date_col], errors="coerce")
-        upcoming = int((trip_dates >= pd.Timestamp.today().normalize()).sum())
+    upcoming = int(compute_upcoming_mask(mode_df).sum())
 
     m1, m2, m3 = st.columns(3)
     m1.metric(f"{mode} Bookings", f"{total_bookings:,}")
@@ -94,4 +90,3 @@ def render_mode_booking(mode: str) -> None:
 
     st.success(f"{mode} booking created successfully. Booking ID: `{booking_id}`")
     st.rerun()
-

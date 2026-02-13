@@ -16,6 +16,15 @@ DATE_COLUMNS_BY_PRIORITY = [
     "Booking Date",
 ]
 NAME_COLUMNS_BY_PRIORITY = ["Passenger Name", "Guest Name"]
+TRIP_START_CANDIDATES = ["Departure Date", "Check-in Date", "Booking Date"]
+TRIP_END_CANDIDATES = [
+    "Check-out Date",
+    "Arrival Date",
+    "Departure Date",
+    "Check-in Date",
+    "Booking Date",
+]
+FINALIZED_STATUSES = {"travelled", "cancelled", "completed"}
 
 
 def get_db_path() -> Path:
@@ -96,6 +105,59 @@ def infer_trip_date_column(frame: pd.DataFrame) -> str | None:
     return None
 
 
+def _coalesce_datetime_columns(
+    frame: pd.DataFrame, candidate_columns: list[str]
+) -> pd.Series:
+    result = pd.Series(pd.NaT, index=frame.index, dtype="datetime64[ns]")
+    for candidate in candidate_columns:
+        if candidate in frame.columns:
+            parsed = pd.to_datetime(frame[candidate], errors="coerce")
+            result = result.fillna(parsed)
+    return result
+
+
+def normalized_status(frame: pd.DataFrame) -> pd.Series:
+    if "Status" not in frame.columns:
+        return pd.Series("", index=frame.index, dtype="object")
+    return frame["Status"].fillna("").astype(str).str.strip().str.lower()
+
+
+def add_trip_window_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    enriched = frame.copy()
+    enriched["Trip Start"] = _coalesce_datetime_columns(enriched, TRIP_START_CANDIDATES)
+    enriched["Trip End"] = _coalesce_datetime_columns(enriched, TRIP_END_CANDIDATES)
+    return enriched
+
+
+def compute_upcoming_mask(
+    frame: pd.DataFrame, reference_date: date | datetime | pd.Timestamp | None = None
+) -> pd.Series:
+    if frame.empty:
+        return pd.Series([], dtype=bool)
+
+    reference = (
+        pd.Timestamp.today().normalize()
+        if reference_date is None
+        else pd.Timestamp(reference_date).normalize()
+    )
+
+    if "Trip Start" in frame.columns and "Trip End" in frame.columns:
+        trip_start = pd.to_datetime(frame["Trip Start"], errors="coerce")
+        trip_end = pd.to_datetime(frame["Trip End"], errors="coerce")
+    else:
+        enriched = add_trip_window_columns(frame)
+        trip_start = enriched["Trip Start"]
+        trip_end = enriched["Trip End"]
+
+    overlaps_now_or_future = (trip_end >= reference) | (
+        trip_end.isna() & (trip_start >= reference)
+    )
+    has_trip_window = trip_start.notna() | trip_end.notna()
+    not_finalized = ~normalized_status(frame).isin(FINALIZED_STATUSES)
+
+    return (overlaps_now_or_future & has_trip_window & not_finalized).fillna(False)
+
+
 def build_unified_bookings(db: ExcelDB) -> pd.DataFrame:
     rows: list[pd.DataFrame] = []
     for mode, frame in db.get_all_booking_data().items():
@@ -121,13 +183,9 @@ def build_unified_bookings(db: ExcelDB) -> pd.DataFrame:
         else:
             prepared["Total Cost"] = 0
 
-        trip_date_col = infer_trip_date_column(prepared)
-        if trip_date_col:
-            prepared["Trip Date"] = pd.to_datetime(
-                prepared[trip_date_col], errors="coerce"
-            )
-        else:
-            prepared["Trip Date"] = pd.NaT
+        prepared = add_trip_window_columns(prepared)
+        prepared["Trip Date"] = prepared["Trip Start"]
+        prepared["Is Upcoming"] = compute_upcoming_mask(prepared)
 
         if "Booking Date" in prepared.columns:
             prepared["Booking Date Parsed"] = pd.to_datetime(
@@ -145,6 +203,9 @@ def build_unified_bookings(db: ExcelDB) -> pd.DataFrame:
                 "Mode",
                 "Traveler",
                 "Trip Date",
+                "Trip Start",
+                "Trip End",
+                "Is Upcoming",
                 "Booking Date Parsed",
                 "Total Cost",
                 "Status",
