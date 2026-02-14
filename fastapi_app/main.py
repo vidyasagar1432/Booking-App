@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from pathlib import Path
 from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
@@ -232,12 +233,15 @@ def apply_booking_filters(statement, booking_mode: Optional[BookingMode], status
     return statement
 
 
-sqlite_file_name = "bookings.db"
-engine = create_engine(f"sqlite:///{sqlite_file_name}", connect_args={"check_same_thread": False})
+APP_DIR = Path(__file__).resolve().parent
+SQLITE_FILE = APP_DIR / "bookings.db"
+STATIC_DIR = APP_DIR / "static"
+
+engine = create_engine(f"sqlite:///{SQLITE_FILE}", connect_args={"check_same_thread": False})
 manager = ConnectionManager()
 
 app = FastAPI(title="Booking App API")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.on_event("startup")
@@ -267,7 +271,7 @@ def get_session():
 
 @app.get("/")
 def serve_index() -> FileResponse:
-    return FileResponse("static/index.html")
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.websocket("/ws")

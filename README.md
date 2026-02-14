@@ -1,43 +1,50 @@
-# Booking App (FastAPI + SQLModel + SQLite + Vue CDN)
+# Booking App Monorepo
 
-Booking management system with a FastAPI backend and a Vue.js (CDN-only) frontend.
+This repository now contains **two separate apps**:
 
-## What is included
-- Full CRUD API for bookings with all key fields across Flight, Hotel, Train, and Bus.
-- SQLite persistence via SQLModel.
-- Admin dashboard with KPI cards (total bookings, revenue, status breakdown).
-- Live data refresh via WebSocket broadcasts and periodic auto-refresh fallback.
-- Pagination + search + filters on list APIs.
-- Consistent JSON response envelope for success and errors.
+- `streamlit_app/` → legacy Streamlit + Excel workflow.
+- `fastapi_app/` → FastAPI + SQLModel + SQLite backend with Vue (CDN) frontend.
 
-## Setup
+## Folder structure
+
+```text
+Booking-App/
+├── streamlit_app/
+│   ├── app.py
+│   ├── pages/
+│   ├── utils/
+│   ├── bookings.xlsx
+│   └── requirements.txt
+├── fastapi_app/
+│   ├── main.py
+│   ├── static/
+│   ├── bookings.db (generated at runtime)
+│   └── requirements.txt
+├── requirements.txt
+└── README.md
+```
+
+## Run Streamlit app
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r streamlit_app/requirements.txt
+streamlit run streamlit_app/app.py
 ```
 
-## Run
+## Run FastAPI app
+
 ```bash
-uvicorn main:app --reload
+python -m venv .venv
+source .venv/bin/activate
+pip install -r fastapi_app/requirements.txt
+uvicorn fastapi_app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000`.
+Open `http://127.0.0.1:8000` for the FastAPI + Vue app.
 
-## API
-- `GET /api/bookings?search=&booking_mode=&status=&page=&page_size=`
-- `POST /api/bookings`
-- `PATCH /api/bookings/{id}`
-- `DELETE /api/bookings/{id}`
-- `GET /api/admin/summary`
-- `WS /ws` for live updates
+## Notes
 
-## Response format
-```json
-{
-  "success": true,
-  "message": "...",
-  "data": {},
-  "meta": {}
-}
-```
+- FastAPI static and SQLite paths are now resolved relative to `fastapi_app/main.py`, so startup works regardless of current working directory.
+- Root `requirements.txt` includes both stacks for convenience, but app-specific requirement files are recommended.
