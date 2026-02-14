@@ -32,8 +32,10 @@ def get_db_path() -> Path:
         secret_path = st.secrets.get("BOOKINGS_FILE", "")
     except Exception:
         secret_path = ""
+
     env_path = os.getenv("BOOKINGS_FILE", "")
-    configured = str(secret_path or env_path or "bookings.xlsx")
+    default_path = Path(__file__).resolve().parents[1] / "bookings.xlsx"
+    configured = str(secret_path or env_path or default_path)
     return Path(configured)
 
 

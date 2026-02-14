@@ -1,0 +1,30 @@
+body { font-family: Inter, Arial, sans-serif; margin: 0; background: #eef1f5; color: #111827; }
+.container { max-width: 1200px; margin: 1.2rem auto; padding: 0 1rem 2rem; }
+header h1 { margin: 0; }
+.tabs { display: flex; gap: .6rem; margin: .8rem 0; }
+.tabs button.active { background: #111827; }
+.card { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 1rem; margin: .8rem 0; }
+.grid { display: grid; gap: .6rem; margin-bottom: .7rem; }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+label { display: flex; flex-direction: column; gap: .25rem; font-size: .85rem; }
+input, select, textarea, button { border: 1px solid #d1d5db; border-radius: 7px; padding: .5rem; font-size: .92rem; }
+button { border: none; background: #2563eb; color: white; cursor: pointer; }
+button:disabled { opacity: .65; cursor: not-allowed; }
+button.warn { background: #d97706; }
+button.danger { background: #dc2626; }
+button.ghost { background: #6b7280; }
+.alert { padding: .6rem .75rem; border-radius: 8px; margin: .6rem 0; }
+.alert.error { background: #fee2e2; color: #991b1b; }
+.alert.success { background: #dcfce7; color: #166534; }
+.loading, .empty { background: #f9fafb; border: 1px dashed #d1d5db; padding: .8rem; border-radius: 8px; margin-bottom: .8rem; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
+.kpis article { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: .75rem; }
+.kpis h3 { margin: 0; font-size: .9rem; color: #4b5563; }
+.kpis p { margin: .35rem 0 0; font-size: 1.2rem; font-weight: 700; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: .5rem; font-size: .88rem; }
+.capitalize { text-transform: capitalize; }
+.pager { display: flex; align-items: center; justify-content: space-between; margin-top: .8rem; }
+.actions { display: flex; gap: .5rem; margin-top: .5rem; }
+@media (max-width: 900px) { .cols-3, .cols-4, .kpis { grid-template-columns: 1fr; } .pager { flex-direction: column; gap: .5rem; } }

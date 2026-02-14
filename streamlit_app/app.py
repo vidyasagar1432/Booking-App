@@ -29,7 +29,7 @@ st.sidebar.caption(f"Data file: `{db_path}`")
 
 if not db_path.exists():
     st.error(
-        "Booking data file was not found. Place `bookings.xlsx` in the project root "
+        "Booking data file was not found. Place `bookings.xlsx` in `streamlit_app/` "
         "or set `BOOKINGS_FILE` in environment/secrets."
     )
     st.stop()
