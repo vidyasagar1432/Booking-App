@@ -3,6 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from pages.admin import render as render_admin
+from pages.analytics import render as render_analytics
 from pages.bus_booking import render as render_bus_booking
 from pages.bookings import render as render_bookings
 from pages.dashboard import render as render_dashboard
@@ -50,6 +51,12 @@ navigation = st.navigation(
                 icon=":material/monitoring:",
                 url_path="dashboard",
                 default=True,
+            ),
+            st.Page(
+                render_analytics,
+                title="Analytics",
+                icon=":material/analytics:",
+                url_path="analytics",
             ),
             st.Page(
                 render_bookings,
