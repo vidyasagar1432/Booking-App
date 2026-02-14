@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Literal, Optional
+from enum import Enum
+from typing import Any, Optional
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
@@ -12,8 +13,17 @@ from pydantic import model_validator
 from sqlalchemy import func, or_
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-BookingMode = Literal["flight", "hotel", "train", "bus"]
-BookingStatus = Literal["pending", "confirmed", "cancelled"]
+class BookingMode(str, Enum):
+    FLIGHT = "flight"
+    HOTEL = "hotel"
+    TRAIN = "train"
+    BUS = "bus"
+
+
+class BookingStatus(str, Enum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
 
 
 class BookingBase(SQLModel):
@@ -25,7 +35,7 @@ class BookingBase(SQLModel):
     phone: Optional[str] = Field(default=None, max_length=30)
     vendor: Optional[str] = Field(default=None, max_length=120)
     booking_date: Optional[date] = None
-    status: BookingStatus = "pending"
+    status: BookingStatus = BookingStatus.PENDING
     notes: Optional[str] = Field(default=None, max_length=500)
     total_cost: Optional[float] = Field(default=None, ge=0)
 
@@ -75,9 +85,9 @@ class BookingBase(SQLModel):
             raise ValueError("check_in_date must be before or equal to check_out_date")
         if self.departure_date and self.arrival_date and self.departure_date > self.arrival_date:
             raise ValueError("departure_date must be before or equal to arrival_date")
-        if self.booking_mode == "hotel" and not (self.guest_name or self.company_name):
+        if self.booking_mode == BookingMode.HOTEL and not (self.guest_name or self.company_name):
             raise ValueError("Hotel booking requires guest_name or company_name")
-        if self.booking_mode in {"flight", "train", "bus"} and not (
+        if self.booking_mode in {BookingMode.FLIGHT, BookingMode.TRAIN, BookingMode.BUS} and not (
             self.passenger_name or self.company_name
         ):
             raise ValueError("Travel booking requires passenger_name or company_name")
@@ -94,8 +104,65 @@ class BookingCreate(BookingBase):
     pass
 
 
-class BookingUpdate(BookingBase):
+class BookingUpdate(SQLModel):
     booking_mode: Optional[BookingMode] = None
+    booking_id: Optional[str] = Field(default=None, max_length=32)
+    company_name: Optional[str] = Field(default=None, max_length=120)
+    email: Optional[str] = Field(default=None, max_length=120)
+    phone: Optional[str] = Field(default=None, max_length=30)
+    vendor: Optional[str] = Field(default=None, max_length=120)
+    booking_date: Optional[date] = None
+    status: Optional[BookingStatus] = None
+    notes: Optional[str] = Field(default=None, max_length=500)
+    total_cost: Optional[float] = Field(default=None, ge=0)
+
+    passengers: Optional[str] = Field(default=None, max_length=500)
+    passenger_count: Optional[int] = Field(default=None, ge=0)
+    passenger_name: Optional[str] = Field(default=None, max_length=120)
+
+    guests: Optional[str] = Field(default=None, max_length=500)
+    guests_count: Optional[int] = Field(default=None, ge=0)
+    guest_name: Optional[str] = Field(default=None, max_length=120)
+
+    airline: Optional[str] = Field(default=None, max_length=120)
+    pnr_eticket_no: Optional[str] = Field(default=None, max_length=120)
+    trip_type: Optional[str] = Field(default=None, max_length=40)
+    from_airport: Optional[str] = Field(default=None, max_length=120)
+    to_airport: Optional[str] = Field(default=None, max_length=120)
+
+    hotel_name: Optional[str] = Field(default=None, max_length=120)
+    city: Optional[str] = Field(default=None, max_length=120)
+    check_in_date: Optional[date] = None
+    check_out_date: Optional[date] = None
+    number_of_nights: Optional[int] = Field(default=None, ge=0)
+    room_type: Optional[str] = Field(default=None, max_length=120)
+    number_of_rooms: Optional[int] = Field(default=None, ge=0)
+
+    train_name: Optional[str] = Field(default=None, max_length=120)
+    train_number: Optional[str] = Field(default=None, max_length=60)
+    from_station: Optional[str] = Field(default=None, max_length=120)
+    to_station: Optional[str] = Field(default=None, max_length=120)
+    coach: Optional[str] = Field(default=None, max_length=60)
+
+    bus_company: Optional[str] = Field(default=None, max_length=120)
+    bus_pnr: Optional[str] = Field(default=None, max_length=120)
+    from_city: Optional[str] = Field(default=None, max_length=120)
+    to_city: Optional[str] = Field(default=None, max_length=120)
+
+    departure_date: Optional[date] = None
+    departure_time: Optional[str] = Field(default=None, max_length=20)
+    arrival_date: Optional[date] = None
+    arrival_time: Optional[str] = Field(default=None, max_length=20)
+    seat_number: Optional[str] = Field(default=None, max_length=60)
+    travel_class: Optional[str] = Field(default=None, max_length=60)
+
+    @model_validator(mode="after")
+    def validate_date_order(self):
+        if self.check_in_date and self.check_out_date and self.check_in_date > self.check_out_date:
+            raise ValueError("check_in_date must be before or equal to check_out_date")
+        if self.departure_date and self.arrival_date and self.departure_date > self.arrival_date:
+            raise ValueError("departure_date must be before or equal to arrival_date")
+        return self
 
 
 class BookingRead(BookingBase):
@@ -135,7 +202,12 @@ def response_error(message: str, code: str = "ERROR", details: Any = None) -> di
 
 
 def build_booking_code(mode: BookingMode) -> str:
-    prefix = {"flight": "FL", "hotel": "HT", "train": "TR", "bus": "BS"}[mode]
+    prefix = {
+        BookingMode.FLIGHT: "FL",
+        BookingMode.HOTEL: "HT",
+        BookingMode.TRAIN: "TR",
+        BookingMode.BUS: "BS",
+    }[mode]
     return f"{prefix}{datetime.utcnow().strftime('%y%m%d%H%M%S')}{uuid4().hex[:4].upper()}"
 
 
