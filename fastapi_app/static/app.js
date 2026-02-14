@@ -4,6 +4,7 @@ function blankForm() {
   const today = new Date().toISOString().slice(0, 10);
   return {
     booking_mode: "flight",
+    booking_id: "",
     booking_date: today,
     status: "pending",
     company_name: "",

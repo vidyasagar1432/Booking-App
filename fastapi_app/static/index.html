@@ -24,8 +24,9 @@
 
       <section class="card" v-if="tab==='bookings'">
         <h2>Create Booking</h2>
-        <div class="grid cols-3">
+        <div class="grid cols-4">
           <label>Mode<select v-model="form.booking_mode"><option value="flight">Flight</option><option value="hotel">Hotel</option><option value="train">Train</option><option value="bus">Bus</option></select></label>
+          <label>Booking ID (optional)<input v-model="form.booking_id" placeholder="Auto-generated if empty" /></label>
           <label>Booking Date<input type="date" v-model="form.booking_date" /></label>
           <label>Status<select v-model="form.status"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label>
         </div>
