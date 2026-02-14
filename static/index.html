@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Admin App</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  </head>
+  <body>
+    <div id="app" class="container">
+      <header>
+        <h1>Booking Management Dashboard</h1>
+        <p>FastAPI + SQLModel + SQLite + Vue CDN</p>
+      </header>
+
+      <p class="alert error" v-if="error">{{ error }}</p>
+      <p class="alert success" v-if="success">{{ success }}</p>
+
+      <nav class="tabs">
+        <button :class="{active: tab==='bookings'}" @click="tab='bookings'">Bookings</button>
+        <button :class="{active: tab==='admin'}" @click="tab='admin'">Admin Dashboard</button>
+      </nav>
+
+      <section class="card" v-if="tab==='bookings'">
+        <h2>Create Booking</h2>
+        <div class="grid cols-3">
+          <label>Mode<select v-model="form.booking_mode"><option value="flight">Flight</option><option value="hotel">Hotel</option><option value="train">Train</option><option value="bus">Bus</option></select></label>
+          <label>Booking Date<input type="date" v-model="form.booking_date" /></label>
+          <label>Status<select v-model="form.status"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></label>
+        </div>
+        <div class="grid cols-3">
+          <label>Company Name<input v-model="form.company_name" /></label>
+          <label>Email<input v-model="form.email" /></label>
+          <label>Phone<input v-model="form.phone" /></label>
+        </div>
+
+        <div class="grid cols-3" v-if="form.booking_mode==='flight' || form.booking_mode==='train' || form.booking_mode==='bus'">
+          <label>Passenger Name<input v-model="form.passenger_name" /></label>
+          <label>Passengers<input v-model="form.passengers" /></label>
+          <label>Passenger Count<input type="number" min="0" v-model.number="form.passenger_count" /></label>
+        </div>
+
+        <div class="grid cols-3" v-if="form.booking_mode==='hotel'">
+          <label>Guest Name<input v-model="form.guest_name" /></label>
+          <label>Guests<input v-model="form.guests" /></label>
+          <label>Guests Count<input type="number" min="0" v-model.number="form.guests_count" /></label>
+        </div>
+
+        <div class="grid cols-3" v-if="form.booking_mode==='flight'">
+          <label>Vendor<input v-model="form.vendor" /></label>
+          <label>Airline<input v-model="form.airline" /></label>
+          <label>PNR / E-Ticket<input v-model="form.pnr_eticket_no" /></label>
+          <label>Type<input v-model="form.trip_type" /></label>
+          <label>From Airport<input v-model="form.from_airport" /></label>
+          <label>To Airport<input v-model="form.to_airport" /></label>
+        </div>
+
+        <div class="grid cols-3" v-if="form.booking_mode==='hotel'">
+          <label>Vendor<input v-model="form.vendor" /></label>
+          <label>Hotel Name<input v-model="form.hotel_name" /></label>
+          <label>City<input v-model="form.city" /></label>
+          <label>Check-in Date<input type="date" v-model="form.check_in_date" /></label>
+          <label>Check-out Date<input type="date" v-model="form.check_out_date" /></label>
+          <label>Number of Nights<input type="number" min="0" v-model.number="form.number_of_nights" /></label>
+          <label>Room Type<input v-model="form.room_type" /></label>
+          <label>Number of Rooms<input type="number" min="0" v-model.number="form.number_of_rooms" /></label>
+        </div>
+
+        <div class="grid cols-3" v-if="form.booking_mode==='train'">
+          <label>Train Name<input v-model="form.train_name" /></label>
+          <label>Train Number<input v-model="form.train_number" /></label>
+          <label>From Station<input v-model="form.from_station" /></label>
+          <label>To Station<input v-model="form.to_station" /></label>
+          <label>Coach<input v-model="form.coach" /></label>
+        </div>
+
+        <div class="grid cols-3" v-if="form.booking_mode==='bus'">
+          <label>Bus Company<input v-model="form.bus_company" /></label>
+          <label>Bus PNR<input v-model="form.bus_pnr" /></label>
+          <label>From City<input v-model="form.from_city" /></label>
+          <label>To City<input v-model="form.to_city" /></label>
+        </div>
+
+        <div class="grid cols-4" v-if="form.booking_mode!=='hotel'">
+          <label>Departure Date<input type="date" v-model="form.departure_date" /></label>
+          <label>Departure Time<input v-model="form.departure_time" /></label>
+          <label>Arrival Date<input type="date" v-model="form.arrival_date" /></label>
+          <label>Arrival Time<input v-model="form.arrival_time" /></label>
+          <label>Seat Number<input v-model="form.seat_number" /></label>
+          <label v-if="form.booking_mode!=='bus'">Class<input v-model="form.travel_class" /></label>
+        </div>
+
+        <div class="grid cols-3">
+          <label>Total Cost<input type="number" min="0" step="0.01" v-model.number="form.total_cost" /></label>
+          <label>Notes<input v-model="form.notes" /></label>
+          <button @click="createBooking" :disabled="formLoading">{{ formLoading ? 'Saving...' : 'Save Booking' }}</button>
+        </div>
+      </section>
+
+      <section class="card" v-if="tab==='admin'">
+        <h2>Admin Dashboard</h2>
+        <div class="kpis">
+          <article><h3>Total Bookings</h3><p>{{ summary.total_bookings || 0 }}</p></article>
+          <article><h3>Total Revenue</h3><p>₹ {{ (summary.total_revenue || 0).toFixed(2) }}</p></article>
+          <article><h3>Confirmed</h3><p>{{ summary.by_status?.confirmed || 0 }}</p></article>
+          <article><h3>Pending</h3><p>{{ summary.by_status?.pending || 0 }}</p></article>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Bookings Data Grid</h2>
+        <div class="grid cols-4">
+          <input v-model="filters.search" placeholder="Search" @input="applyFilters" />
+          <select v-model="filters.booking_mode" @change="applyFilters"><option value="">All modes</option><option value="flight">Flight</option><option value="hotel">Hotel</option><option value="train">Train</option><option value="bus">Bus</option></select>
+          <select v-model="filters.status" @change="applyFilters"><option value="">All status</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select>
+          <button @click="loadAll">Refresh</button>
+        </div>
+
+        <div class="loading" v-if="loading">Loading bookings...</div>
+        <div class="empty" v-else-if="!hasRows">No bookings found for current filters.</div>
+
+        <table v-else>
+          <thead><tr><th>ID</th><th>Mode</th><th>Booking Code</th><th>Name</th><th>Route/City</th><th>Date</th><th>Cost</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr v-for="b in bookings" :key="b.id">
+              <td>{{ b.id }}</td>
+              <td class="capitalize">{{ b.booking_mode }}</td>
+              <td>{{ b.booking_id }}</td>
+              <td>{{ b.passenger_name || b.guest_name || '-' }}</td>
+              <td>{{ b.from_airport || b.from_station || b.from_city || b.city || '-' }} → {{ b.to_airport || b.to_station || b.to_city || '-' }}</td>
+              <td>{{ b.departure_date || b.check_in_date || '-' }}</td>
+              <td>{{ b.total_cost || 0 }}</td>
+              <td><select v-model="b.status" @change="patchBooking(b.id, {status:b.status})"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></select></td>
+              <td>
+                <button class="warn" @click="startEdit(b)">Edit</button>
+                <button class="danger" @click="deleteBooking(b.id)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pager">
+          <button class="ghost" @click="prevPage" :disabled="!canPrev">Previous</button>
+          <span>Page {{ page }} / {{ meta.total_pages || 1 }} • {{ meta.total || 0 }} records</span>
+          <button class="ghost" @click="nextPage" :disabled="!canNext">Next</button>
+        </div>
+      </section>
+
+      <section class="card" v-if="editing.id">
+        <h2>Edit Booking #{{ editing.id }}</h2>
+        <textarea v-model="editingJson" rows="14"></textarea>
+        <div class="actions">
+          <button @click="saveEdit">Update</button>
+          <button class="ghost" @click="cancelEdit">Cancel</button>
+        </div>
+      </section>
+    </div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

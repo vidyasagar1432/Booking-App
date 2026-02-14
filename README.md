@@ -1,28 +1,43 @@
-# Booking App (Streamlit + Excel)
+# Booking App (FastAPI + SQLModel + SQLite + Vue CDN)
 
-Streamlit application for managing travel bookings where `bookings.xlsx` is the primary data store.
+Booking management system with a FastAPI backend and a Vue.js (CDN-only) frontend.
 
-## Features
-- Unified dashboard across Flight, Hotel, Train, and Bus sheets.
-- Booking explorer with filters and CSV export.
-- New booking form with automatic Booking ID generation.
-- Admin-only dashboard for inline edit, delete, and sheet replacement.
+## What is included
+- Full CRUD API for bookings with all key fields across Flight, Hotel, Train, and Bus.
+- SQLite persistence via SQLModel.
+- Admin dashboard with KPI cards (total bookings, revenue, status breakdown).
+- Live data refresh via WebSocket broadcasts and periodic auto-refresh fallback.
+- Pagination + search + filters on list APIs.
+- Consistent JSON response envelope for success and errors.
 
 ## Setup
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ## Run
 ```bash
-streamlit run app.py
+uvicorn main:app --reload
 ```
 
-## Optional configuration
-- `BOOKINGS_FILE`: path to Excel workbook (default: `bookings.xlsx`)
-- `ADMIN_PASSWORD`: admin login password (default fallback: `admin123`)
+Open `http://127.0.0.1:8000`.
 
-You can set these in environment variables or Streamlit secrets.
+## API
+- `GET /api/bookings?search=&booking_mode=&status=&page=&page_size=`
+- `POST /api/bookings`
+- `PATCH /api/bookings/{id}`
+- `DELETE /api/bookings/{id}`
+- `GET /api/admin/summary`
+- `WS /ws` for live updates
 
+## Response format
+```json
+{
+  "success": true,
+  "message": "...",
+  "data": {},
+  "meta": {}
+}
+```
