@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel & Booking Admin</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/vue-router@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://api.mapbox.com/mapbox.js/plugins/arc.js/v0.1.0/arc.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/styles.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6', // Teal main
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        },
+                        accent: {
+                            500: '#8b5cf6', // Violet
+                            600: '#7c3aed',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden">
+    <div id="app" v-cloak
+        class="flex h-screen w-full bg-[#fcfdfe] relative selection:bg-brand-500 selection:text-white">
+        <!-- Overlay Texture -->
+        <div class="bg-noise"></div>
+
+        <!-- Sidebar -->
+        <aside
+            class="w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 z-20 shadow-sm relative">
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <div class="flex items-center gap-2 text-brand-600">
+                    <i class='bx bxs-plane-alt text-2xl'></i>
+                    <span class="text-xl font-bold tracking-tight">TravelAdmin</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 scrollbar-thin">
+                <router-link to="/dashboard" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-grid-alt text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/bookings" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-book-content text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Bookings</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/employees" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-user-circle text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Employees</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/companies" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-buildings text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Companies</span>
+                    </a>
+                </router-link>
+
+                <div class="pt-4 mt-2 border-t border-gray-100"></div>
+
+                <router-link to="/calendar" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-calendar text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Calendar</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/tracker" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-radar text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Live Tracker</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/reports" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-bar-chart-square text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Detailed Reports</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/export" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-cloud-download text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Export Data</span>
+                    </a>
+                </router-link>
+
+                <router-link to="/settings" custom v-slot="{ href, navigate, isActive }">
+                    <a :href="href" @click="navigate" :class="['flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-sm font-semibold relative overflow-hidden group', 
+                       isActive ? 'sidebar-link-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']">
+                        <i class='bx bx-cog text-xl'
+                            :class="isActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-gray-600'"></i>
+                        <span>Settings</span>
+                    </a>
+                </router-link>
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center gap-3 px-3 py-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                        A
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold text-gray-800 leading-none mb-1">Admin User</span>
+                        <span class="text-xs text-gray-500 leading-none">admin@travel.com</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8fafc] w-full">
+            <!-- Header -->
+            <header class="h-16 px-8 flex items-center justify-between">
+                <div class="flex items-center gap-8 flex-1">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-6 bg-brand-500 rounded-full"></span>
+                            <h1 class="text-lg font-bold text-gray-900 capitalize">{{ routeName }}</h1>
+                        </div>
+                    </div>
+
+                    <!-- Global Search -->
+                    <div class="hidden sm:flex items-center gap-3 w-full max-w-xl relative">
+                        <div
+                            class="relative w-full group search-glow rounded-xl overflow-hidden transition-all duration-300">
+                            <i
+                                class='bx bx-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors text-xl'></i>
+                            <input type="text" ref="searchInput" v-model="globalSearchQuery"
+                                @focus="showGlobalSearch = true" @blur="hideGlobalSearch" @input="debouncedGlobalSearch"
+                                placeholder="Search everywhere..."
+                                class="w-full bg-white border-white/40 pl-11 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-0 focus:bg-white transition-all font-medium placeholder-gray-400 shadow-sm">
+                            <div
+                                class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 opacity-30 pointer-events-none group-focus-within:opacity-0 transition-opacity">
+                                <span
+                                    class="text-[9px] font-black border border-gray-400 rounded-md px-1.5 py-0.5 tracking-tighter">⌘</span>
+                                <span
+                                    class="text-[9px] font-black border border-gray-400 rounded-md px-1.5 py-0.5 tracking-tighter">K</span>
+                            </div>
+                        </div>
+
+                        <!-- Global Search Dropdown -->
+                        <div v-if="showGlobalSearch && globalSearchQuery.length >= 2"
+                            class="absolute top-12 left-0 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden text-sm flex flex-col max-h-[70vh] z-50 animate-fade-in shadow-2xl">
+                            <div v-if="isGlobalSearching" class="p-4 text-center text-brand-500 bg-white">
+                                <i class='bx bx-loader-alt bx-spin text-2xl'></i>
+                            </div>
+                            <div v-else-if="globalSearchResults.companies.length === 0 && globalSearchResults.employees.length === 0 && globalSearchResults.bookings.length === 0"
+                                class="p-6 flex flex-col items-center justify-center text-gray-500 bg-white">
+                                <i class='bx bx-search-alt text-4xl text-gray-200 mb-2'></i>
+                                <span class="font-medium text-gray-600">No results found for "{{ globalSearchQuery
+                                    }}"</span>
+                                <span class="text-xs text-gray-400">Try a different term or keyword.</span>
+                            </div>
+                            <div v-else class="overflow-y-auto bg-white">
+                                <!-- Companies Result -->
+                                <div v-if="globalSearchResults.companies.length > 0">
+                                    <div
+                                        class="px-4 py-2 bg-gray-50/90 backdrop-blur-sm border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-widest sticky top-0 z-10 flex items-center">
+                                        <i class='bx bx-building-house mr-1'></i> Companies
+                                    </div>
+                                    <div v-for="c in globalSearchResults.companies" :key="'c'+c.id"
+                                        @mousedown.prevent="goToDetail('companies', c.id)"
+                                        class="px-4 py-3 hover:bg-brand-50 cursor-pointer flex justify-between items-center group transition-colors border-b border-gray-50 last:border-b-0">
+                                        <div class="min-w-0 flex-1">
+                                            <div
+                                                class="font-semibold text-gray-800 group-hover:text-brand-700 truncate">
+                                                {{ c.name }}</div>
+                                            <div class="text-xs text-gray-500 truncate">{{ c.desc }}</div>
+                                        </div>
+                                        <i
+                                            class='bx bx-chevron-right text-gray-300 group-hover:text-brand-500 ml-2'></i>
+                                    </div>
+                                </div>
+                                <!-- Employees Result -->
+                                <div v-if="globalSearchResults.employees.length > 0">
+                                    <div
+                                        class="px-4 py-2 bg-gray-50/90 backdrop-blur-sm border-b border-t border-gray-100/50 text-xs font-bold text-gray-500 uppercase tracking-widest sticky top-0 z-10 flex items-center">
+                                        <i class='bx bx-user mr-1'></i> Employees
+                                    </div>
+                                    <div v-for="e in globalSearchResults.employees" :key="'e'+e.id"
+                                        @mousedown.prevent="goToDetail('employees', e.id)"
+                                        class="px-4 py-3 hover:bg-brand-50 cursor-pointer flex justify-between items-center group transition-colors border-b border-gray-50 last:border-b-0">
+                                        <div class="min-w-0 flex-1">
+                                            <div
+                                                class="font-semibold text-gray-800 group-hover:text-brand-700 truncate">
+                                                {{ e.name }}</div>
+                                            <div class="text-xs text-gray-500 truncate">{{ e.desc }}</div>
+                                        </div>
+                                        <i
+                                            class='bx bx-chevron-right text-gray-300 group-hover:text-brand-500 ml-2'></i>
+                                    </div>
+                                </div>
+                                <!-- Bookings Result -->
+                                <div v-if="globalSearchResults.bookings.length > 0">
+                                    <div
+                                        class="px-4 py-2 bg-gray-50/90 backdrop-blur-sm border-b border-t border-gray-100/50 text-xs font-bold text-gray-500 uppercase tracking-widest sticky top-0 z-10 flex items-center">
+                                        <i class='bx bx-book-bookmark mr-1'></i> Bookings
+                                    </div>
+                                    <div v-for="b in globalSearchResults.bookings" :key="'b'+b.id"
+                                        @mousedown.prevent="goToDetail('bookings', b.id)"
+                                        class="px-4 py-3 hover:bg-brand-50 cursor-pointer flex justify-between items-center group transition-colors border-b border-gray-50 last:border-b-0">
+                                        <div class="min-w-0 flex-1">
+                                            <div
+                                                class="font-semibold text-gray-800 group-hover:text-brand-700 truncate">
+                                                {{ b.name }}</div>
+                                            <div class="text-xs text-gray-500 truncate">{{ b.desc }}</div>
+                                        </div>
+                                        <i
+                                            class='bx bx-chevron-right text-gray-300 group-hover:text-brand-500 ml-2'></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 flex-shrink-0 ml-4">
+                    <button @click="toggleDarkMode"
+                        class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50">
+                        <i :class="['bx text-lg', isDarkMode ? 'bx-sun' : 'bx-moon']"></i>
+                    </button>
+                    <div class="relative">
+                        <button @click="showNotifications = !showNotifications" @blur="hideNotifications"
+                            class="w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:text-brand-600 hover:border-brand-200 hover:bg-brand-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 relative">
+                            <i class='bx bx-bell text-lg'></i>
+                            <span v-if="notifications?.unread_count > 0"
+                                class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border border-white dark:border-gray-800 pointer-events-none"></span>
+                        </button>
+
+                        <!-- Notification Dropdown -->
+                        <div v-show="showNotifications"
+                            class="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden z-[500] pointer-events-auto origin-top-right transform transition-all duration-200">
+                            <div
+                                class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                                <h3
+                                    class="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">
+                                    Action Center</h3>
+                                <span
+                                    class="bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-400 text-[10px] font-bold px-2 py-0.5 rounded-md">{{
+                                    notifications?.unread_count || 0 }} Alerts</span>
+                            </div>
+                            <div class="max-h-80 overflow-y-auto scrollbar-thin">
+                                <div v-if="!notifications?.alerts || notifications.alerts.length === 0"
+                                    class="p-6 text-center text-gray-400 text-sm">
+                                    <i class='bx bx-check-circle text-3xl mb-2 text-green-500/50 block'></i>
+                                    All clear! No pending actions.
+                                </div>
+                                <div v-for="alert in notifications?.alerts" :key="alert.id"
+                                    @click="goToRoute(alert.link)"
+                                    class="p-4 border-b border-gray-50 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 group">
+                                    <div :class="['w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm',
+                                                  alert.type === 'warning' ? 'bg-yellow-50 text-yellow-600 border-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-900/50 dark:text-yellow-500' :
+                                                  (alert.type === 'error' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-500' : 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:border-blue-900/50 dark:text-blue-500')
+                                                  ]">
+                                        <i :class="['bx text-lg', alert.icon]"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4
+                                            class="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover:text-brand-600 transition-colors leading-tight">
+                                            {{ alert.title }}</h4>
+                                        <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-snug">{{
+                                            alert.message }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="resetDb"
+                        class="px-3 py-1.5 rounded-md bg-white text-gray-600 border border-gray-200 text-xs font-semibold hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 flex items-center gap-1 shadow-sm">
+                        <i class='bx bx-reset'></i> DB
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Content View -->
+            <div class="flex-1 overflow-x-hidden overflow-y-auto p-8 layout-content">
+                <router-view v-slot="{ Component }">
+                    <transition name="fade" mode="out-in">
+                        <component :is="Component" />
+                    </transition>
+                    </transition>
+                </router-view>
+            </div>
+        </main>
+
+        <!-- Toast Notifications Container -->
+        <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+            <transition-group name="fade">
+                <div v-for="toast in toasts" :key="toast.id" :class="['px-4 py-3 rounded-lg shadow-lg pointer-events-auto flex items-center gap-3 backdrop-blur-md min-w-[300px]', 
+                     toast.type === 'success' ? 'bg-emerald-500/90 text-white' : 
+                     toast.type === 'error' ? 'bg-red-500/90 text-white' : 
+                     'bg-gray-800/90 text-white']">
+                    <i
+                        :class="['bx text-xl', toast.type === 'success' ? 'bx-check-circle' : toast.type === 'error' ? 'bx-x-circle' : 'bx-info-circle']"></i>
+                    <span class="text-sm font-medium">{{ toast.message }}</span>
+                    <button @click="removeToast(toast.id)"
+                        class="ml-auto opacity-70 hover:opacity-100 focus:outline-none">
+                        <i class='bx bx-x text-lg'></i>
+                    </button>
+                </div>
+            </transition-group>
+        </div>
+    </div>
+
+    <!-- Components -->
+    <script src="/static/core.js"></script>
+    <script src="/static/Dashboard.js"></script>
+    <script src="/static/Bookings.js"></script>
+    <script src="/static/Employees.js"></script>
+    <script src="/static/Companies.js"></script>
+    <script src="/static/CompanyDetail.js"></script>
+    <script src="/static/EmployeeDetail.js"></script>
+    <script src="/static/BookingDetail.js"></script>
+    <script src="/static/Export.js"></script>
+    <script src="/static/Calendar.js"></script>
+    <script src="/static/Tracker.js"></script>
+    <script src="/static/Reports.js"></script>
+    <script src="/static/Settings.js"></script>
+
+    <!-- Inject JS -->
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

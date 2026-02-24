@@ -1,0 +1,277 @@
+[v-cloak] {
+    display: none !important;
+}
+
+:root {
+    --brand-primary: #14b8a6;
+    --brand-dark: #0f766e;
+    --brand-light: #ccfbf1;
+    --sidebar-width: 260px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(203, 213, 225, 0.4);
+    border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.6);
+}
+
+/* Background Texture */
+.bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.015;
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+}
+
+/* Layout Transitions */
+.fade-enter-active,
+.fade-leave-active {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+/* Improved Modal Interaction */
+.modal-enter-active {
+    animation: modal-bg-fade 0.3s ease;
+}
+
+.modal-leave-active {
+    animation: modal-bg-fade 0.3s ease reverse;
+}
+
+.modal-enter-active .modal-container {
+    animation: modal-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-leave-active .modal-container {
+    animation: modal-pop 0.25s ease reverse;
+}
+
+@keyframes modal-bg-fade {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+
+    to {
+        opacity: 1;
+        backdrop-filter: blur(4px);
+    }
+}
+
+@keyframes modal-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Premium Sidebar Active State */
+.sidebar-link-active {
+    background: linear-gradient(to right, rgba(20, 184, 166, 0.08), transparent);
+    color: var(--brand-dark);
+}
+
+.sidebar-link-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 18px;
+    background: var(--brand-primary);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 0 8px rgba(20, 184, 166, 0.4);
+}
+
+/* Glass & Premium Cards */
+.premium-card {
+    background: white;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.premium-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 12px 24px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.hover-lift {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+}
+
+/* Base refinement */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Navigation & Header */
+header {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    z-index: 40 !important;
+}
+
+.search-glow:focus-within {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(20, 184, 166, 0.2);
+}
+
+/* Scrollbar Thin for containers */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+}
+
+/* Fix for ApexCharts */
+.apexcharts-canvas {
+    z-index: 1 !important;
+}
+
+.passenger-card:focus-within {
+    z-index: 50 !important;
+    position: relative;
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Dark Mode Globals
+   ══════════════════════════════════════════════════════════════ */
+html.dark body {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+html.dark main,
+html.dark #app {
+    background-color: #0f172a !important;
+}
+
+html.dark header,
+html.dark aside,
+html.dark .premium-card,
+html.dark .bg-white {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4 {
+    color: #f8fafc !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+    color: #94a3b8 !important;
+}
+
+html.dark .bg-gray-50 {
+    background-color: #334155 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: #f8fafc !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200 {
+    border-color: #334155 !important;
+}
+
+html.dark .hover\:bg-gray-50:hover,
+html.dark .group:hover .group-hover\:bg-gray-50 {
+    background-color: #475569 !important;
+}
+
+html.dark .glass-effect {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .bg-noise {
+    opacity: 0.04;
+}
+
+/* Ensure ApexCharts look legible in dark mode (override their internal styles) */
+html.dark .apexcharts-tooltip {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+    color: #f8fafc !important;
+}
+
+html.dark .apexcharts-tooltip-title {
+    background: #0f172a !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+html.dark .apexcharts-text tspan {
+    fill: #94a3b8;
+}
