@@ -126,6 +126,7 @@ async def get_booking(booking_id: str, session: AsyncSession = Depends(get_sessi
 async def create_booking_api(payload: BookingCreate, bg_tasks: BackgroundTasks, 
                              session: AsyncSession = Depends(get_session)):
     bk = await create_new_booking(session, payload)
+    await session.commit()
 
     bg_tasks.add_task(manager.broadcast, {"type": "booking_created", "id": bk.booking_id})
     return booking_to_dict(bk)

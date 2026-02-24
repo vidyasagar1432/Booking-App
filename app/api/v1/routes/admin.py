@@ -15,13 +15,31 @@ router = APIRouter()
 
 @router.post("/reset-db", status_code=200)
 async def admin_reset_db():
-    from app.db.session import init_db, engine
+    from app.db.session import engine
     from sqlmodel import SQLModel
     # Note: For SQLite, drop_all might need syncing context, but we will do a basic approach
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
     return {"message": "Database reset successfully."}
+
+
+@router.post("/seed-db", status_code=200)
+async def admin_seed_db(reset_first: bool = False):
+    try:
+        from scripts.seed_data import seed_data
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Seed script unavailable: {exc}") from exc
+
+    if reset_first:
+        await admin_reset_db()
+
+    try:
+        await seed_data()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Seeding failed: {exc}") from exc
+
+    return {"message": "Database seeded successfully."}
 
 @router.get("/export")
 async def admin_export_db(
