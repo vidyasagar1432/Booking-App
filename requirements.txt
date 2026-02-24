@@ -1,4 +1,11 @@
-streamlit>=1.40.0
-pandas>=2.2.0
-openpyxl>=3.1.0
-
+fastapi
+uvicorn[standard]
+sqlmodel
+python-multipart
+openpyxl
+aiosqlite
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+pandas
+httpx
