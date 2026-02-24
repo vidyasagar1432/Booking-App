@@ -55,8 +55,14 @@ const app = createApp({
         };
 
         const seedDb = async () => {
-            appState.showToast('We need to add a /api/admin/seed-db endpoint first!', 'info');
-        }
+            if (!confirm('Seed demo data into database?')) return;
+            const resetFirst = confirm('Reset DB before seeding? Click Cancel to append sample data only.');
+            try {
+                await api.request(`/api/admin/seed-db?reset_first=${resetFirst}`, { method: 'POST' });
+                appState.showToast('Database seeded successfully.');
+                window.location.reload();
+            } catch (e) { }
+        };
 
         // Global Search State
         const globalSearchQuery = ref('');
